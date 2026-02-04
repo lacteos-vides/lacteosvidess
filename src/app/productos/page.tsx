@@ -1,138 +1,273 @@
 "use client";
 
-/* Pantalla de productos para TV: sin scroll, letra grande, llamativa */
+/* Migrado desde mockup de pantalla de productos - diseño aprobado por cliente */
 
-const MOCK_PRODUCTOS = [
-  { name: "Quesillo Blanco Especial", price: 2.9, category: "Quesillo" },
-  { name: "Quesillo Súper Especial", price: 3.0, category: "Quesillo" },
-  { name: "Queso Duro Viejo", price: 4.5, category: "Queso" },
-  { name: "Queso Majado", price: 3.5, category: "Queso" },
-  { name: "Crema Natural", price: 2.8, category: "Crema" },
-  { name: "Mantequilla", price: 3.2, category: "Crema" },
-  { name: "Leche Entera 1L", price: 1.5, category: "Leche" },
-  { name: "Leche Descremada 1L", price: 1.6, category: "Leche" },
-  { name: "Yogurt Natural", price: 2.2, category: "Yogurt" },
-  { name: "Requesón", price: 2.5, category: "Quesillo" },
-  { name: "Cuajada", price: 2.7, category: "Quesillo" },
-  { name: "Queso Fresco", price: 3.8, category: "Queso" },
+import { useEffect, useState } from "react";
+import { motion } from "motion/react";
+
+interface Product {
+  id: number;
+  name: string;
+  price: string;
+}
+
+const products: Product[] = [
+  { id: 1, name: "Leche Entera 1L", price: "$25.00" },
+  { id: 2, name: "Leche Deslactosada 1L", price: "$28.00" },
+  { id: 3, name: "Queso Fresco 500g", price: "$65.00" },
+  { id: 4, name: "Queso Panela 400g", price: "$55.00" },
+  { id: 5, name: "Queso Oaxaca 500g", price: "$75.00" },
+  { id: 6, name: "Queso Manchego 500g", price: "$85.00" },
+  { id: 7, name: "Yogurt Natural 1L", price: "$35.00" },
+  { id: 8, name: "Yogurt de Fresa 1L", price: "$38.00" },
+  { id: 9, name: "Crema 500ml", price: "$45.00" },
+  { id: 10, name: "Mantequilla 250g", price: "$48.00" },
+  { id: 11, name: "Requesón 250g", price: "$32.00" },
+  { id: 12, name: "Jocoque 500ml", price: "$35.00" },
+  { id: 13, name: "Queso Cottage 250g", price: "$42.00" },
+  { id: 14, name: "Leche Descremada 1L", price: "$26.00" },
 ];
 
-function formatPrice(price: number) {
-  return new Intl.NumberFormat("es-SV", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-  }).format(price);
-}
-
 export default function ProductosDisplayPage() {
-  const mid = Math.ceil(MOCK_PRODUCTOS.length / 2);
-  const col1 = MOCK_PRODUCTOS.slice(0, mid);
-  const col2 = MOCK_PRODUCTOS.slice(mid);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [activeProductIndex, setActiveProductIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const highlightTimer = setInterval(() => {
+      setActiveProductIndex((prev) => (prev + 1) % products.length);
+    }, 2000);
+    return () => clearInterval(highlightTimer);
+  }, []);
+
+  const midPoint = Math.ceil(products.length / 2);
+  const column1 = products.slice(0, midPoint);
+  const column2 = products.slice(midPoint);
 
   return (
-    <div className="fixed inset-0 flex h-screen w-screen flex-col overflow-hidden">
-      {/* Fondo */}
-      <div className="absolute inset-0">
-        <div
-          className="absolute inset-0 scale-105 bg-cover bg-center bg-no-repeat blur-[3px]"
-          style={{ backgroundImage: "url('/brand/BANNER%20PARA%20IMPRESION2.png')" }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-amber-950/50 via-amber-900/35 to-amber-950/55" />
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute left-[10%] top-[20%] h-32 w-32 animate-pulse rounded-full bg-amber-400/10 blur-3xl" />
-          <div className="absolute right-[15%] bottom-[30%] h-40 w-40 animate-pulse rounded-full bg-yellow-300/10 blur-3xl" style={{ animationDelay: "1s" }} />
+    <div className="relative h-screen w-full overflow-hidden bg-black">
+      {/* Fondo con imagen blur */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage: "url('/brand/BANNER%20PARA%20IMPRESION2.png')",
+          filter: "blur(8px)",
+          transform: "scale(1.1)",
+        }}
+      />
+
+      {/* Overlay oscuro para mejorar legibilidad */}
+      <div className="absolute inset-0 bg-black/40" />
+
+      {/* Contenido principal */}
+      <div className="relative z-10 flex h-screen flex-col">
+        {/* Header */}
+        <motion.header
+          className="px-8 pb-4 pt-6"
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+        >
+          <div className="flex items-center justify-between">
+            <motion.div
+              className="flex items-center gap-6"
+              animate={{
+                scale: [1, 1.05, 1],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
+              <img
+                src="/brand/IMAGEN_PRINCIPAL.png"
+                alt="Logo Lácteos Vides"
+                className="h-28 w-28 rounded-full drop-shadow-[0_6px_12px_rgba(0,0,0,0.8)]"
+              />
+              <div>
+                <h1
+                  className="text-7xl font-black text-white drop-shadow-[0_6px_12px_rgba(0,0,0,0.8)]"
+                  style={{
+                    fontFamily: "Impact, sans-serif",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  LÁCTEOS VIDES
+                </h1>
+                <p
+                  className="mt-1 text-2xl font-bold text-yellow-300 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
+                  style={{ fontStyle: "italic" }}
+                >
+                  La Mejor Calidad al Mejor Precio
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="text-right"
+              animate={{ opacity: [0.9, 1, 0.9] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <div className="text-3xl font-bold text-yellow-300 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]">
+                {currentTime.toLocaleTimeString("es-MX", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </div>
+              <div className="text-xl text-white/90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                {currentTime.toLocaleDateString("es-MX", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                })}
+              </div>
+            </motion.div>
+          </div>
+        </motion.header>
+
+        {/* Separador decorativo */}
+        <motion.div
+          className="mx-8 mb-4"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 1, delay: 0.3 }}
+        >
+          <div className="h-1.5 rounded-full bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400 shadow-lg" />
+        </motion.div>
+
+        {/* Título de menú */}
+        <motion.div
+          className="mb-4 text-center"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+        >
+          <h2 className="text-5xl font-black text-yellow-300 drop-shadow-[0_6px_12px_rgba(0,0,0,0.9)]">
+            NUESTROS PRODUCTOS
+          </h2>
+        </motion.div>
+
+        {/* Grid de productos en dos columnas */}
+        <div className="flex-1 overflow-hidden px-12 pb-4">
+          <div className="mx-auto grid h-full max-w-7xl grid-cols-2 gap-12">
+            {/* Columna 1 */}
+            <motion.div
+              className="space-y-3"
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.7 }}
+            >
+              {column1.map((product, index) => (
+                <motion.div
+                  key={product.id}
+                  className="flex items-center justify-between rounded-xl border-2 border-yellow-400/30 bg-white/10 px-5 py-3 backdrop-blur-sm transition-all"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    scale: activeProductIndex === index ? 1.05 : 1,
+                    borderColor:
+                      activeProductIndex === index
+                        ? "rgba(250, 204, 21, 0.8)"
+                        : "rgba(250, 204, 21, 0.3)",
+                  }}
+                  transition={{ duration: 0.5, delay: 0.8 + index * 0.1 }}
+                >
+                  <span className="text-2xl font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                    {product.name}
+                  </span>
+                  <motion.span
+                    className="text-3xl font-black text-yellow-300 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{
+                      duration: 2,
+                      delay: index * 0.2,
+                      repeat: Infinity,
+                    }}
+                  >
+                    {product.price}
+                  </motion.span>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* Columna 2 */}
+            <motion.div
+              className="space-y-3"
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.7 }}
+            >
+              {column2.map((product, index) => {
+                const globalIndex = midPoint + index;
+                return (
+                  <motion.div
+                    key={product.id}
+                    className="flex items-center justify-between rounded-xl border-2 border-yellow-400/30 bg-white/10 px-5 py-3 backdrop-blur-sm transition-all"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                      scale: activeProductIndex === globalIndex ? 1.05 : 1,
+                      borderColor:
+                        activeProductIndex === globalIndex
+                          ? "rgba(250, 204, 21, 0.8)"
+                          : "rgba(250, 204, 21, 0.3)",
+                    }}
+                    transition={{ duration: 0.5, delay: 0.8 + index * 0.1 }}
+                  >
+                    <span className="text-2xl font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                      {product.name}
+                    </span>
+                    <motion.span
+                      className="text-3xl font-black text-yellow-300 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
+                      animate={{ scale: [1, 1.1, 1] }}
+                      transition={{
+                        duration: 2,
+                        delay: index * 0.2,
+                        repeat: Infinity,
+                      }}
+                    >
+                      {product.price}
+                    </motion.span>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          </div>
         </div>
-      </div>
 
-      {/* Contenido: sin scroll, todo visible */}
-      <div className="relative z-10 flex h-full min-h-0 flex-1 flex-col p-4 md:p-6 lg:p-8">
-        {/* Header compacto: logo + título + slogan en una fila */}
-        <header className="mb-4 flex shrink-0 items-center justify-center gap-4 md:mb-6 md:gap-6">
-          <div className="animate-float shrink-0 drop-shadow-2xl">
-            <img
-              src="/brand/IMAGEN_PRINCIPAL.png"
-              alt="Lácteos Vides"
-              className="h-16 w-auto md:h-20"
-            />
-          </div>
-          <div className="flex flex-col items-center gap-0.5 md:items-start">
-            <div className="relative overflow-hidden rounded-xl bg-amber-500/20 px-4 py-2 backdrop-blur-sm md:px-6 md:py-3">
-              <div className="absolute inset-0 animate-shimmer rounded-xl" />
-              <h1 className="relative text-2xl font-black tracking-tight text-white drop-shadow-lg md:text-4xl lg:text-5xl">
-                LÁCTEOS VIDES
-              </h1>
-            </div>
-            <p className="animate-pulse-glow text-sm font-bold text-amber-200 md:text-lg lg:text-xl">
-              ✦ La mejor calidad al mejor precio ✦
+        {/* Footer decorativo */}
+        <motion.footer
+          className="py-4 text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 1.5 }}
+        >
+          <motion.div
+            animate={{
+              y: [0, -10, 0],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="inline-block"
+          >
+            <p className="text-3xl font-black text-yellow-300 drop-shadow-[0_4px_8px_rgba(0,0,0,0.9)]">
+              🐄 ¡FRESCURA Y CALIDAD GARANTIZADA! 🐄
             </p>
-          </div>
-        </header>
-
-        {/* Listado: letra grande, animado, sin scroll */}
-        <main className="flex min-h-0 flex-1 items-center justify-center">
-          <div className="grid w-full max-w-6xl flex-1 grid-cols-1 gap-3 md:grid-cols-2 md:gap-x-12 md:gap-y-2 lg:gap-x-16 lg:gap-y-3">
-            <ul className="flex min-h-0 flex-1 flex-col justify-evenly gap-1 md:gap-2">
-              {col1.map((p, i) => (
-                <ProductRow key={i} product={p} index={i} formatPrice={formatPrice} />
-              ))}
-            </ul>
-            <ul className="flex min-h-0 flex-1 flex-col justify-evenly gap-1 md:gap-2">
-              {col2.map((p, i) => (
-                <ProductRow key={i} product={p} index={i + mid} formatPrice={formatPrice} />
-              ))}
-            </ul>
-          </div>
-        </main>
-
-        {/* Footer mínimo */}
-        <footer className="mt-2 shrink-0 text-center md:mt-4">
-          <span className="rounded-full bg-amber-500/15 px-4 py-1.5 text-xs font-semibold text-amber-200/90 backdrop-blur-sm md:text-sm">
-            Catálogo de productos — Frescos y deliciosos
-          </span>
-        </footer>
+          </motion.div>
+        </motion.footer>
       </div>
     </div>
-  );
-}
-
-function ProductRow({
-  product,
-  index,
-  formatPrice,
-}: {
-  product: { name: string; price: number };
-  index: number;
-  formatPrice: (n: number) => string;
-}) {
-  return (
-    <li
-      className="flex items-center justify-between gap-4 rounded-xl px-3 py-2 transition-colors md:px-4 md:py-3"
-      style={{
-        animation: `product-attract 3s ease-in-out infinite`,
-        animationDelay: `${index * 0.5}s`,
-      }}
-    >
-      <span
-        className="min-w-0 flex-1 font-bold text-white drop-shadow-lg"
-        style={{
-          animation: "row-highlight 4s ease-in-out infinite",
-          animationDelay: `${index * 0.35}s`,
-          fontSize: "clamp(1.5rem, 3.5vw, 2.5rem)",
-        }}
-      >
-        {product.name}
-      </span>
-      <span
-        className="shrink-0 rounded-lg bg-amber-400/30 px-3 py-1.5 font-black text-amber-100"
-        style={{
-          animation: "price-pop 3s ease-in-out infinite",
-          animationDelay: `${index * 0.3 + 0.5}s`,
-          fontSize: "clamp(1.75rem, 4vw, 2.75rem)",
-        }}
-      >
-        {formatPrice(product.price)}
-      </span>
-    </li>
   );
 }
