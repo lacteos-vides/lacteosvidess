@@ -229,7 +229,7 @@ export default function ProductosDisplayPage() {
                       {product.name}
                     </span>
                     <motion.span
-                      className="text-3xl font-black text-yellow-300 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
+                      className="text-3xl font-black text-yellow-300 text-[36px] drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
                       animate={{ scale: [1, 1.1, 1] }}
                       transition={{
                         duration: 2,
