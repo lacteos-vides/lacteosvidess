@@ -91,11 +91,11 @@ export default function ProductosDisplayPage() {
               <img
                 src="/brand/IMAGEN_PRINCIPAL.png"
                 alt="Logo Lácteos Vides"
-                className="h-24 w-24 rounded-full drop-shadow-[0_6px_12px_rgba(0,0,0,0.8)]"
+                className="h-28 w-28 rounded-full drop-shadow-[0_6px_12px_rgba(0,0,0,0.8)]"
               />
               <div>
                 <h1
-                  className="text-6xl font-black text-white drop-shadow-[0_6px_12px_rgba(0,0,0,0.8)]"
+                  className="text-7xl font-black text-white drop-shadow-[0_6px_12px_rgba(0,0,0,0.8)]"
                   style={{
                     fontFamily: "Impact, sans-serif",
                     letterSpacing: "0.05em",
@@ -104,7 +104,7 @@ export default function ProductosDisplayPage() {
                   LÁCTEOS VIDES
                 </h1>
                 <p
-                  className="mt-0.5 text-xl font-bold text-yellow-300 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
+                  className="mt-1 text-2xl font-bold text-yellow-300 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
                   style={{ fontStyle: "italic" }}
                 >
                   La Mejor Calidad al Mejor Precio
@@ -117,7 +117,7 @@ export default function ProductosDisplayPage() {
               animate={{ opacity: [0.9, 1, 0.9] }}
               transition={{ duration: 2, repeat: Infinity }}
             >
-              <div className="text-2xl font-bold text-yellow-300 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]">
+              <div className="text-3xl font-bold text-yellow-300 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]">
                 {currentTime.toLocaleTimeString("es-MX", {
                   hour: "2-digit",
                   minute: "2-digit",
@@ -151,17 +151,17 @@ export default function ProductosDisplayPage() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.5 }}
         >
-          <h2 className="text-4xl font-black text-yellow-300 drop-shadow-[0_6px_12px_rgba(0,0,0,0.9)]">
+          <h2 className="text-5xl font-black text-yellow-300 drop-shadow-[0_6px_12px_rgba(0,0,0,0.9)]">
             NUESTROS PRODUCTOS
           </h2>
         </motion.div>
 
         {/* Grid de productos en dos columnas */}
-        <div className="flex-1 overflow-hidden px-10 pb-3">
-          <div className="mx-auto grid h-full max-w-6xl grid-cols-2 gap-x-10 gap-y-2">
+        <div className="flex-1 overflow-hidden px-8 pb-3">
+          <div className="mx-auto grid h-full w-full max-w-[1700px] grid-cols-2 gap-x-16 gap-y-4">
             {/* Columna 1 */}
             <motion.div
-              className="space-y-2"
+              className="space-y-3"
               initial={{ opacity: 0, x: -50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.7 }}
@@ -169,7 +169,7 @@ export default function ProductosDisplayPage() {
               {column1.map((product, index) => (
                 <motion.div
                   key={product.id}
-                  className="flex items-center justify-between rounded-xl border-2 border-yellow-400/30 bg-white/10 px-4 py-2 backdrop-blur-sm transition-all"
+                  className="flex items-center justify-between rounded-xl border-2 border-yellow-400/30 bg-white/10 px-6 py-4 backdrop-blur-sm transition-all"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{
                     opacity: 1,
@@ -182,11 +182,11 @@ export default function ProductosDisplayPage() {
                   }}
                   transition={{ duration: 0.5, delay: 0.8 + index * 0.1 }}
                 >
-                  <span className="text-xl font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                  <span className="text-2xl font-bold text-white text-[36px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                     {product.name}
                   </span>
                   <motion.span
-                    className="text-2xl font-black text-yellow-300 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
+                    className="text-3xl font-black text-yellow-300 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
                     animate={{ scale: [1, 1.1, 1] }}
                     transition={{
                       duration: 2,
@@ -202,7 +202,7 @@ export default function ProductosDisplayPage() {
 
             {/* Columna 2 */}
             <motion.div
-              className="space-y-2"
+              className="space-y-3"
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.7 }}
@@ -212,7 +212,7 @@ export default function ProductosDisplayPage() {
                 return (
                   <motion.div
                     key={product.id}
-                    className="flex items-center justify-between rounded-xl border-2 border-yellow-400/30 bg-white/10 px-4 py-2 backdrop-blur-sm transition-all"
+                    className="flex items-center justify-between rounded-xl border-2 border-yellow-400/30 bg-white/10 px-6 py-4 backdrop-blur-sm transition-all"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{
                       opacity: 1,
@@ -225,11 +225,11 @@ export default function ProductosDisplayPage() {
                     }}
                     transition={{ duration: 0.5, delay: 0.8 + index * 0.1 }}
                   >
-                    <span className="text-xl font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                    <span className="text-2xl font-bold text-white text-[36px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                       {product.name}
                     </span>
                     <motion.span
-                      className="text-2xl font-black text-yellow-300 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
+                      className="text-3xl font-black text-yellow-300 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
                       animate={{ scale: [1, 1.1, 1] }}
                       transition={{
                         duration: 2,
@@ -264,7 +264,7 @@ export default function ProductosDisplayPage() {
             }}
             className="inline-block"
           >
-            <p className="text-2xl font-black text-yellow-300 drop-shadow-[0_4px_8px_rgba(0,0,0,0.9)]">
+            <p className="text-3xl font-black text-yellow-300 drop-shadow-[0_4px_8px_rgba(0,0,0,0.9)]">
               🐄 ¡FRESCURA Y CALIDAD GARANTIZADA! 🐄
             </p>
           </motion.div>
