@@ -35,6 +35,8 @@ const pages: MenuPage[] = [
           { name: "QUESO AÑEJO", price: "$7.99" },
           { name: "QUESO MANCHEGO", price: "$8.49" },
           { name: "REQUESÓN", price: "$3.99" },
+          { name: "QUESO CREMA", price: "$3.49" },
+          { name: "QUESO COTTAGE", price: "$4.29" },
         ],
       },
       {
@@ -46,6 +48,7 @@ const pages: MenuPage[] = [
           { name: "YOGURT GRIEGO", price: "$4.49" },
           { name: "CREMA ÁCIDA", price: "$3.49" },
           { name: "MANTEQUILLA", price: "$4.99" },
+          { name: "JOCOQUE", price: "$3.79" },
         ],
       },
     ],
@@ -62,6 +65,7 @@ const pages: MenuPage[] = [
           { name: "LICUADO DE FRESA", price: "$4.50" },
           { name: "LICUADO DE PLÁTANO", price: "$4.00" },
           { name: "AGUA FRESCA", price: "$2.00" },
+          { name: "JUGO DE MANGO", price: "$3.75" },
         ],
       },
       {
@@ -73,6 +77,8 @@ const pages: MenuPage[] = [
           { name: "NATILLA", price: "$2.99" },
           { name: "PASTEL DE QUESO", price: "$5.00" },
           { name: "CHONGOS ZAMORANOS", price: "$4.50" },
+          { name: "DULCE DE LECHE", price: "$3.99" },
+          { name: "CREMA CATALANA", price: "$4.25" },
         ],
       },
     ],
@@ -80,27 +86,30 @@ const pages: MenuPage[] = [
 ];
 
 export function TVMenuBoard() {
-  const [pageIndex, setPageIndex] = useState(0);
-  const [highlightIndex, setHighlightIndex] = useState(0);
+  const [state, setState] = useState({ pageIndex: 0, highlightIndex: 0 });
+  const { pageIndex, highlightIndex } = state;
 
   const currentPage = pages[pageIndex];
   const totalItemsOnPage = getItemsInPage(currentPage).length;
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setHighlightIndex((prev) => {
-        const next = prev + 1;
+      setState((s) => {
+        const total = getItemsInPage(pages[s.pageIndex]).length;
+        const next = s.highlightIndex + 1;
 
-        if (next >= totalItemsOnPage) {
-          setPageIndex((prevPage) => (prevPage + 1) % pages.length);
-          return 0;
+        if (next >= total) {
+          return {
+            pageIndex: (s.pageIndex + 1) % pages.length,
+            highlightIndex: 0,
+          };
         }
-        return next;
+        return { ...s, highlightIndex: next };
       });
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [totalItemsOnPage]);
+  }, []);
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100 font-sans">
@@ -165,7 +174,7 @@ export function TVMenuBoard() {
                         {/* Category Header */}
                         <div className="mb-4 relative">
                           <h3
-                            className="border-l-8 border-yellow-500 pl-4 text-3xl text-amber-800 lg:text-4xl"
+                            className="border-l-8 border-yellow-500 pl-4 text-3xl text-amber-800 lg:text-5xl"
                             style={{ fontFamily: "Impact, sans-serif" }}
                           >
                             {column.title}
