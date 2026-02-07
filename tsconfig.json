@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "mockup de pantalla de productos", "Mockup de pantalla de productos - v2", "src/main.tsx"]
+  "exclude": ["node_modules", "mockup de pantalla de productos", "Mockup de pantalla de productos - v2", "Lacteos vides tv mockups nuevo", "src/main.tsx"]
 }
