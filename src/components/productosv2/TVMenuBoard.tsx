@@ -103,8 +103,8 @@ export function TVMenuBoard() {
   }, [totalItemsOnPage]);
 
   return (
-    <div className="h-screen w-full overflow-hidden bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100 font-sans">
-      <div className="flex h-full">
+    <div className="flex h-full w-full overflow-hidden bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100 font-sans">
+      <div className="flex h-full w-full">
         {/* Left Sidebar - Branding with Animation */}
         <div className="relative z-10 w-[25%] overflow-hidden bg-yellow-400 shadow-2xl">
           <motion.div
@@ -121,14 +121,14 @@ export function TVMenuBoard() {
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-yellow-900/40 to-transparent mix-blend-multiply" />
         </div>
 
-        {/* Main Content Area */}
-        <div className="relative flex flex-1 flex-col overflow-hidden p-8 lg:p-12">
+        {/* Main Content Area - menos padding para dar más espacio a las cards */}
+        <div className="relative flex flex-1 flex-col overflow-hidden p-4 lg:p-6">
           <div className="absolute -translate-y-1/2 translate-x-1/2 right-0 top-0 h-64 w-64 rounded-full bg-yellow-300 opacity-30 blur-[100px]" />
           <div className="absolute bottom-0 left-20 h-96 w-96 translate-y-1/2 rounded-full bg-amber-200 opacity-40 blur-[120px]" />
 
-          <div className="relative z-10 mx-auto flex h-full w-full max-w-7xl flex-col pb-8">
+          <div className="relative z-10 mx-auto flex h-full w-full max-w-[95%] flex-col pb-4">
             {/* Header */}
-            <div className="mb-6 text-center lg:mb-10">
+            <div className="mb-4 text-center lg:mb-6">
               <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -152,7 +152,7 @@ export function TVMenuBoard() {
                 animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                 exit={{ opacity: 0, x: -50, filter: "blur(10px)" }}
                 transition={{ duration: 0.8, ease: "circOut" }}
-                className="grid flex-1 grid-cols-2 gap-8 lg:gap-12"
+                className="grid flex-1 grid-cols-2 gap-6 lg:gap-8"
               >
                 {currentPage.columns.map((column, colIndex) => {
                   const prevItemsCount = currentPage.columns
@@ -161,9 +161,9 @@ export function TVMenuBoard() {
 
                   return (
                     <div key={column.title} className="flex h-full flex-col">
-                      <div className="flex h-full flex-col rounded-3xl border border-white/50 bg-white/70 p-6 shadow-xl backdrop-blur-md lg:p-8">
+                      <div className="flex h-full flex-col rounded-3xl border border-white/50 bg-white/70 p-5 shadow-xl backdrop-blur-md lg:p-6">
                         {/* Category Header */}
-                        <div className="mb-6 relative">
+                        <div className="mb-4 relative">
                           <h3
                             className="border-l-8 border-yellow-500 pl-4 text-3xl text-amber-800 lg:text-4xl"
                             style={{ fontFamily: "Impact, sans-serif" }}
@@ -172,7 +172,7 @@ export function TVMenuBoard() {
                           </h3>
                         </div>
 
-                        <div className="flex flex-1 flex-col justify-center gap-2">
+                        <div className="flex flex-1 flex-col justify-center gap-3">
                           {column.items.map((product, idx) => {
                             const globalIndex = prevItemsCount + idx;
                             const isActive = globalIndex === highlightIndex;
@@ -180,7 +180,7 @@ export function TVMenuBoard() {
                             return (
                               <motion.div
                                 key={idx}
-                                className={`relative flex items-center justify-between rounded-xl px-4 py-3 transition-all duration-500 ${
+                                className={`relative flex items-center justify-between rounded-xl px-5 py-4 transition-all duration-500 ${
                                   isActive
                                     ? "scale-[1.02] border-l-4 border-yellow-600 bg-gradient-to-r from-yellow-200 to-yellow-100 shadow-md"
                                     : "border-b border-amber-100 last:border-0"
@@ -190,7 +190,7 @@ export function TVMenuBoard() {
                                 transition={{ delay: idx * 0.05 }}
                               >
                                 <motion.span
-                                  className={`text-2xl font-medium tracking-tight lg:text-3xl ${
+                                  className={`text-3xl font-medium tracking-tight lg:text-4xl ${
                                     isActive
                                       ? "font-bold text-amber-900"
                                       : "text-gray-700"
@@ -210,7 +210,7 @@ export function TVMenuBoard() {
 
                                 <div className="flex items-center gap-2">
                                   <span
-                                    className={`text-3xl lg:text-4xl ${
+                                    className={`text-4xl lg:text-5xl ${
                                       isActive
                                         ? "text-amber-700"
                                         : "text-yellow-600"
