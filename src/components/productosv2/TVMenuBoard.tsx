@@ -36,7 +36,6 @@ const pages: MenuPage[] = [
           { name: "QUESO MANCHEGO", price: "$8.49" },
           { name: "REQUESÓN", price: "$3.99" },
           { name: "QUESO CREMA", price: "$3.49" },
-          { name: "QUESO COTTAGE", price: "$4.29" },
         ],
       },
       {
@@ -49,7 +48,6 @@ const pages: MenuPage[] = [
           { name: "CREMA ÁCIDA", price: "$3.49" },
           { name: "MANTEQUILLA", price: "$4.99" },
           { name: "JOCOQUE", price: "$3.79" },
-          { name: "CREMA PARA BATIR", price: "$4.49" },
         ],
       },
     ],
@@ -67,7 +65,6 @@ const pages: MenuPage[] = [
           { name: "LICUADO DE PLÁTANO", price: "$4.00" },
           { name: "AGUA FRESCA", price: "$2.00" },
           { name: "JUGO DE MANGO", price: "$3.75" },
-          { name: "HORCHATA", price: "$3.25" },
         ],
       },
       {
@@ -80,7 +77,6 @@ const pages: MenuPage[] = [
           { name: "PASTEL DE QUESO", price: "$5.00" },
           { name: "CHONGOS ZAMORANOS", price: "$4.50" },
           { name: "DULCE DE LECHE", price: "$3.99" },
-          { name: "CREMA CATALANA", price: "$4.25" },
         ],
       },
     ],
@@ -132,12 +128,12 @@ export function TVMenuBoard() {
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-yellow-900/40 to-transparent mix-blend-multiply" />
         </div>
 
-        {/* Main Content Area - menos padding para dar más espacio a las cards */}
-        <div className="relative flex flex-1 flex-col overflow-hidden p-4 lg:p-6">
+        {/* Main Content Area - márgenes laterales mínimos, cards más anchas */}
+        <div className="relative flex flex-1 flex-col overflow-hidden px-2 py-4 lg:px-3 lg:py-6">
           <div className="absolute -translate-y-1/2 translate-x-1/2 right-0 top-0 h-64 w-64 rounded-full bg-yellow-300 opacity-30 blur-[100px]" />
           <div className="absolute bottom-0 left-20 h-96 w-96 translate-y-1/2 rounded-full bg-amber-200 opacity-40 blur-[120px]" />
 
-          <div className="relative z-10 mx-auto flex h-full w-full max-w-[95%] flex-col pb-4">
+          <div className="relative z-10 mx-auto flex h-full w-full max-w-[99%] flex-col pb-4">
             {/* Header */}
             <div className="mb-4 text-center lg:mb-6">
               <motion.div
@@ -146,7 +142,7 @@ export function TVMenuBoard() {
                 className="inline-block"
               >
                 <h2
-                  className="mb-2 text-5xl font-bold tracking-wide drop-shadow-sm lg:text-6xl"
+                  className="mb-2 text-5xl font-bold tracking-wide drop-shadow-sm lg:text-7xl"
                   style={{
                     fontFamily: "var(--font-display), Impact, sans-serif",
                     color: "#78350f",
@@ -166,7 +162,7 @@ export function TVMenuBoard() {
                 animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                 exit={{ opacity: 0, x: -50, filter: "blur(10px)" }}
                 transition={{ duration: 0.8, ease: "circOut" }}
-                className="grid flex-1 grid-cols-2 gap-6 lg:gap-8"
+                className="grid flex-1 grid-cols-2 gap-3 lg:gap-4"
               >
                 {currentPage.columns.map((column, colIndex) => {
                   const prevItemsCount = currentPage.columns
@@ -179,7 +175,7 @@ export function TVMenuBoard() {
                         {/* Category Header */}
                         <div className="mb-4 relative">
                           <h3
-                            className="border-l-8 border-yellow-500 pl-4 text-3xl font-bold lg:text-5xl"
+                            className="border-l-8 border-yellow-500 pl-4 text-xl font-bold lg:text-6xl"
                             style={{
                               fontFamily: "var(--font-display), Impact, sans-serif",
                               color: "#78350f",
@@ -207,7 +203,7 @@ export function TVMenuBoard() {
                                 transition={{ delay: idx * 0.05 }}
                               >
                                 <motion.span
-                                  className={`text-3xl font-medium tracking-tight lg:text-4xl ${
+                                  className={`text-3xl font-medium tracking-tight lg:text-5xl ${
                                     isActive
                                       ? "font-bold text-amber-900"
                                       : "text-gray-700"
@@ -227,7 +223,7 @@ export function TVMenuBoard() {
 
                                 <div className="flex items-center gap-2">
                                   <span
-                                    className="text-4xl font-bold lg:text-5xl"
+                                    className="text-4xl font-bold lg:text-6xl"
                                     style={{
                                       fontFamily: "var(--font-display), Impact, sans-serif",
                                       color: isActive ? "#b45309" : "#ca8a04",
