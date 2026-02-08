@@ -32,7 +32,7 @@ const routes = [
     icon: Images,
     label: "Galería",
     description: "Carrusel de imágenes",
-    enabled: false,
+    enabled: true,
   },
   {
     href: "/videos",
