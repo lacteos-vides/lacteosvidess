@@ -39,7 +39,7 @@ const routes = [
     icon: Video,
     label: "Videos",
     description: "Reproductor de videos",
-    enabled: false,
+    enabled: true,
   },
 ];
 
@@ -76,9 +76,6 @@ export default function HomePage() {
               >
                 Lácteos Vides
               </h1>
-              <p className="mt-3 text-xl text-slate-400">
-                Visualizador de precios y videos
-              </p>
             </div>
 
             {/* Grid de cards de navegación */}
