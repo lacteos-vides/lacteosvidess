@@ -9,36 +9,32 @@ interface VideoItem {
 }
 
 const VIDEO_ITEMS: VideoItem[] = [
-  { src: "/videos/vid1.mp4", text: "La mejor calidad" },
-  { src: "/videos/vid2.mp4", text: "Al mejor precio" },
-  { src: "/videos/vid3.mp4", text: "Tu mejor opción" },
+  { src: "/videos/vid1.mp4", text: "La mejor calidad, al mejor precio" },
+  { src: "/videos/vid2.mp4", text: "Lácteos Vides, la mejor calidad" },
+  { src: "/videos/vid3.mp4", text: "Lácteos Vides, Tu mejor opción" },
 ];
-
-const SLIDE_DURATION_MS = 10000;
 
 export function TVVideosBoard() {
   const [index, setIndex] = useState(0);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
-  // Cambio de slide cada X segundos
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setIndex((i) => (i + 1) % VIDEO_ITEMS.length);
-    }, SLIDE_DURATION_MS);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Solo reproducir el video activo; pausar los demás (todos permanecen en DOM = caché)
+  // Solo reproducir el video activo desde el inicio; pausar los demás
   useEffect(() => {
     videoRefs.current.forEach((ref, i) => {
       if (!ref) return;
       if (i === index) {
+        ref.currentTime = 0;
         ref.play().catch(() => {});
       } else {
         ref.pause();
       }
     });
   }, [index]);
+
+  // Cambiar al siguiente slide solo cuando el video actual termine
+  const handleVideoEnded = () => {
+    setIndex((i) => (i + 1) % VIDEO_ITEMS.length);
+  };
 
   const current = VIDEO_ITEMS[index];
 
@@ -85,9 +81,9 @@ export function TVVideosBoard() {
                         }}
                         src={item.src}
                         muted
-                        loop
                         playsInline
                         preload="auto"
+                        onEnded={i === index ? handleVideoEnded : undefined}
                         className="h-full w-full rounded-3xl object-cover p-2"
                         style={{ pointerEvents: "none" }}
                       />
