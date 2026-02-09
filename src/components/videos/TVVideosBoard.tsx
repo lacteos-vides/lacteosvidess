@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
 interface VideoItem {
@@ -18,7 +18,9 @@ const SLIDE_DURATION_MS = 10000;
 
 export function TVVideosBoard() {
   const [index, setIndex] = useState(0);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
+  // Cambio de slide cada X segundos
   useEffect(() => {
     const interval = setInterval(() => {
       setIndex((i) => (i + 1) % VIDEO_ITEMS.length);
@@ -26,12 +28,24 @@ export function TVVideosBoard() {
     return () => clearInterval(interval);
   }, []);
 
+  // Solo reproducir el video activo; pausar los demás (todos permanecen en DOM = caché)
+  useEffect(() => {
+    videoRefs.current.forEach((ref, i) => {
+      if (!ref) return;
+      if (i === index) {
+        ref.play().catch(() => {});
+      } else {
+        ref.pause();
+      }
+    });
+  }, [index]);
+
   const current = VIDEO_ITEMS[index];
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100 font-sans">
       <div className="flex h-full w-full">
-        {/* Left Sidebar - Branding (igual que gallery/productosv2) */}
+        {/* Left Sidebar - Branding */}
         <div className="relative z-10 w-[25%] overflow-hidden bg-yellow-400 shadow-2xl">
           <motion.div
             className="h-full w-full"
@@ -53,35 +67,37 @@ export function TVVideosBoard() {
           <div className="absolute bottom-0 left-20 h-96 w-96 translate-y-1/2 rounded-full bg-amber-200 opacity-40 blur-[120px]" />
 
           <div className="relative z-10 flex h-full w-full flex-col">
-            {/* Área del video - arriba, ocupa casi toda la derecha */}
+            {/* Área del video - todos permanecen en DOM para caché, solo mostramos el activo */}
             <div className="relative flex-1 flex items-center justify-center px-4 pb-2 pt-2">
               <div className="relative h-full w-full overflow-hidden rounded-3xl">
-                <AnimatePresence mode="wait">
+                {VIDEO_ITEMS.map((item, i) => (
                   <motion.div
-                    key={current.src}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
+                    key={item.src}
+                    initial={false}
+                    animate={{ opacity: i === index ? 1 : 0 }}
                     transition={{ duration: 1.2, ease: "easeInOut" }}
                     className="absolute inset-0"
                   >
-                    <div className="absolute inset-0 rounded-3xl bg-white/30 shadow-2xl ring-1 ring-white/50 backdrop-blur-sm overflow-hidden">
+                    <div className="absolute inset-0 overflow-hidden rounded-3xl bg-white/30 shadow-2xl ring-1 ring-white/50 backdrop-blur-sm">
                       <video
-                        src={current.src}
-                        autoPlay
+                        ref={(el) => {
+                          videoRefs.current[i] = el;
+                        }}
+                        src={item.src}
                         muted
                         loop
                         playsInline
-                        className="h-full w-full rounded-3xl object-cover p-2 [&::-webkit-media-controls]:hidden [&::-webkit-media-controls-panel]:hidden"
+                        preload="auto"
+                        className="h-full w-full rounded-3xl object-cover p-2"
                         style={{ pointerEvents: "none" }}
                       />
                     </div>
                   </motion.div>
-                </AnimatePresence>
+                ))}
               </div>
             </div>
 
-            {/* Card inferior - texto centrado, lleno a los lados y abajo */}
+            {/* Card inferior - texto centrado */}
             <div className="relative shrink-0 -mb-6 -mx-6 overflow-hidden rounded-t-3xl bg-white/70 px-10 py-6 shadow-[0_-4px_24px_rgba(0,0,0,0.08)] backdrop-blur-md">
               <div className="relative flex min-h-[5rem] items-center justify-center">
                 <AnimatePresence mode="wait">
