@@ -223,10 +223,11 @@ export function TVMenuBoard() {
 
                                 <div className="flex items-center gap-2">
                                   <span
-                                    className="text-4xl font-bold lg:text-6xl"
+                                    className={`text-4xl font-bold lg:text-6xl ${
+                                      isActive ? "text-amber-900" : "text-gray-700"
+                                    }`}
                                     style={{
                                       fontFamily: "var(--font-display), Impact, sans-serif",
-                                      color: isActive ? "#b45309" : "#ca8a04",
                                     }}
                                   >
                                     {product.price}
