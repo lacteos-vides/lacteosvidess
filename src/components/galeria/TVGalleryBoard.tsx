@@ -1,32 +1,47 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-
-interface GalleryItem {
-  image: string;
-  product: string;
-  price: string;
-}
-
-const GALLERY_ITEMS: GalleryItem[] = [
-  { image: "/gallery/lacteos1.jpg", product: "QUESO OAXACA", price: "$5.99" },
-  { image: "/gallery/lacteos2.jpg", product: "LECHE ENTERA", price: "$2.49" },
-];
+import type { GalleryItem } from "@/lib/types/database";
 
 const SLIDE_DURATION_MS = 10000;
 
-export function TVGalleryBoard() {
+interface TVGalleryBoardProps {
+  initialItems: GalleryItem[];
+}
+
+export function TVGalleryBoard({ initialItems }: TVGalleryBoardProps) {
+  const items = useMemo(
+    () =>
+      initialItems.map((i) => ({
+        id: i.id,
+        image: i.image_url,
+        product: i.product.toUpperCase(),
+        price: i.price || "",
+      })),
+    [initialItems]
+  );
+
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
+    if (items.length === 0) return;
     const interval = setInterval(() => {
-      setIndex((i) => (i + 1) % GALLERY_ITEMS.length);
+      setIndex((i) => (i + 1) % items.length);
     }, SLIDE_DURATION_MS);
     return () => clearInterval(interval);
-  }, []);
+  }, [items.length]);
 
-  const current = GALLERY_ITEMS[index];
+  const current = items[index];
+
+  // Sin items: mostrar mensaje
+  if (items.length === 0) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100">
+        <p className="text-xl font-medium text-amber-900">No hay imágenes en la galería</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100 font-sans">
@@ -53,27 +68,28 @@ export function TVGalleryBoard() {
           <div className="absolute bottom-0 left-20 h-96 w-96 translate-y-1/2 rounded-full bg-amber-200 opacity-40 blur-[120px]" />
 
           <div className="relative z-10 flex h-full w-full flex-col">
-            {/* Área de la imagen - arriba, ocupa casi toda la derecha */}
+            {/* Área de la imagen - arriba; todas montadas para cache del navegador */}
             <div className="relative flex-1 flex items-center justify-center px-4 pb-2 pt-2">
               <div className="relative h-full w-full overflow-hidden rounded-3xl">
-                <AnimatePresence mode="wait">
+                {items.map((item, i) => (
                   <motion.div
-                    key={current.image}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
+                    key={item.id}
+                    initial={false}
+                    animate={{ opacity: i === index ? 1 : 0 }}
                     transition={{ duration: 1.2, ease: "easeInOut" }}
                     className="absolute inset-0"
                   >
                     <div className="absolute inset-0 rounded-3xl bg-white/30 shadow-2xl ring-1 ring-white/50 backdrop-blur-sm">
                       <img
-                        src={current.image}
-                        alt={current.product}
+                        src={item.image}
+                        alt={item.product}
+                        loading="eager"
+                        decoding="async"
                         className="h-full w-full rounded-3xl object-cover p-2"
                       />
                     </div>
                   </motion.div>
-                </AnimatePresence>
+                ))}
               </div>
             </div>
 
@@ -82,7 +98,7 @@ export function TVGalleryBoard() {
               <div className="relative flex min-h-[5rem] items-center justify-between">
                 <AnimatePresence mode="wait">
                   <motion.div
-                    key={current.image}
+                    key={current.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -105,7 +121,7 @@ export function TVGalleryBoard() {
                         color: "#ca8a04",
                       }}
                     >
-                      {current.price}
+                      ${current.price}
                     </span>
                   </motion.div>
                 </AnimatePresence>
