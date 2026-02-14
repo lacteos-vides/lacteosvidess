@@ -57,7 +57,7 @@ export function ProductosDisplay({ initialPages }: ProductosDisplayProps) {
 
   if (!currentPage || (currentPage.column1.length === 0 && currentPage.column2.length === 0)) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-slate-900">
+      <div className="flex h-full w-full items-center justify-center bg-black">
         <p className="text-xl text-yellow-300">No hay productos disponibles</p>
       </div>
     );
@@ -66,13 +66,13 @@ export function ProductosDisplay({ initialPages }: ProductosDisplayProps) {
   const col1Len = currentPage.column1.length;
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-slate-900">
+    <div className="relative h-full w-full overflow-hidden bg-black">
       <div
         className="absolute inset-0"
         style={{
           background: `
-            linear-gradient(135deg, #0f172a 0%, #1e293b 35%, #334155 50%, #1e293b 70%, #0f172a 100%),
-            linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0.6) 100%)
+            linear-gradient(135deg, #000000 0%, #0a0a0a 35%, #171717 50%, #0a0a0a 70%, #000000 100%),
+            linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.5) 100%)
           `,
         }}
       />
