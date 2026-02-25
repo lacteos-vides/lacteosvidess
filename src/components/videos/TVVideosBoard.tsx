@@ -93,6 +93,7 @@ export function TVVideosBoard({ initialVideos }: TVVideosBoardProps) {
                           videoRefs.current[i] = el;
                         }}
                         src={item.src}
+                        muted
                         playsInline
                         preload="auto"
                         onEnded={i === index ? handleVideoEnded : undefined}
