@@ -24,9 +24,11 @@ const getItemsInPage = (page: MenuPage) => {
 
 interface TVMenuBoardProps {
   initialPages: MenuPage[];
+  /** Si true, no se muestra el título de categoría en cada columna (para Productos v3 destacados) */
+  hideColumnTitles?: boolean;
 }
 
-export function TVMenuBoard({ initialPages }: TVMenuBoardProps) {
+export function TVMenuBoard({ initialPages, hideColumnTitles = false }: TVMenuBoardProps) {
   const pages = useMemo(() => initialPages, [initialPages]);
   const [state, setState] = useState({ pageIndex: 0, highlightIndex: 0 });
   const { pageIndex, highlightIndex } = state;
@@ -125,20 +127,22 @@ export function TVMenuBoard({ initialPages }: TVMenuBoardProps) {
                     .reduce((acc, col) => acc + col.items.length, 0);
 
                   return (
-                    <div key={`${currentPage.id}-${column.title}`} className="flex h-full flex-col">
+                    <div key={`${currentPage.id}-${column.title || colIndex}`} className="flex h-full flex-col">
                       <div className="flex h-full flex-col rounded-3xl border border-white/50 bg-white/70 p-5 shadow-xl backdrop-blur-md lg:p-6">
-                        {/* Category Header */}
-                        <div className="mb-4 relative">
-                          <h3
-                            className="border-l-8 border-yellow-500 pl-4 text-xl font-bold lg:text-6xl"
-                            style={{
-                              fontFamily: "var(--font-display), Impact, sans-serif",
-                              color: "#78350f",
-                            }}
-                          >
-                            {column.title}
-                          </h3>
-                        </div>
+                        {/* Category Header (oculto en v3 destacados) */}
+                        {!hideColumnTitles && column.title && (
+                          <div className="mb-4 relative">
+                            <h3
+                              className="border-l-8 border-yellow-500 pl-4 text-xl font-bold lg:text-6xl"
+                              style={{
+                                fontFamily: "var(--font-display), Impact, sans-serif",
+                                color: "#78350f",
+                              }}
+                            >
+                              {column.title}
+                            </h3>
+                          </div>
+                        )}
 
                         <div className="flex flex-1 flex-col justify-center gap-3">
                           {column.items.map((product, idx) => {

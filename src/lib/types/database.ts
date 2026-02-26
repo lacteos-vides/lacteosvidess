@@ -13,6 +13,7 @@ export type Product = {
   price: number;
   order_index: number;
   estado: "activo" | "inactivo";
+  is_featured?: boolean;
   created_at: string;
 };
 

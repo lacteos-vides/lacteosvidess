@@ -11,6 +11,7 @@ type ProductRow = {
   price: number;
   order_index: number;
   category_id: string;
+  is_featured?: boolean;
 };
 
 type Props = {
@@ -46,7 +47,8 @@ export function ProductosContent({ categories, products }: Props) {
         />
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setSelectedCategoryId("all")}
           className={`cursor-pointer rounded-lg px-4 py-2 text-sm font-medium transition ${
@@ -70,6 +72,10 @@ export function ProductosContent({ categories, products }: Props) {
             {c.name}
           </button>
         ))}
+        </div>
+        <span className="text-sm text-slate-500">
+          Productos destacados: {products.filter((p) => p.is_featured).length}/14
+        </span>
       </div>
 
       <ProductsTable

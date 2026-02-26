@@ -28,6 +28,13 @@ const routes = [
     enabled: true,
   },
   {
+    href: "/productosv3",
+    icon: LayoutGrid,
+    label: "Productos destacados",
+    description: "Productos destacados (estáticos)",
+    enabled: true,
+  },
+  {
     href: "/galeria",
     icon: Images,
     label: "Galería",

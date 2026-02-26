@@ -30,8 +30,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Pencil, Trash2, GripVertical } from "lucide-react";
-import { deleteProduct, reorderProducts } from "./actions";
+import { Pencil, Trash2, GripVertical, Star } from "lucide-react";
+import { deleteProduct, reorderProducts, toggleProductFeatured } from "./actions";
 import { DeleteConfirmModal } from "@/components/ui/delete-confirm-modal";
 import { EditProductModal } from "./edit-product-modal";
 import { useToast } from "@/components/ui/toast";
@@ -44,6 +44,7 @@ type ProductRow = {
   price: number;
   order_index: number;
   category_id: string;
+  is_featured?: boolean;
 };
 
 type Category = { id: string; name: string; order_index: number };
@@ -52,12 +53,16 @@ function SortableProductRow({
   product,
   onEdit,
   onDelete,
+  onToggleFeatured,
   deleting,
+  togglingFeatured,
 }: {
   product: ProductRow;
   onEdit: () => void;
   onDelete: () => void;
+  onToggleFeatured: () => void;
   deleting: boolean;
+  togglingFeatured: boolean;
 }) {
   const {
     attributes,
@@ -72,6 +77,8 @@ function SortableProductRow({
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  const featured = !!product.is_featured;
 
   return (
     <tr
@@ -88,6 +95,19 @@ function SortableProductRow({
           <GripVertical className="h-4 w-4" />
           {product.order_index}
         </span>
+      </td>
+      <td className="px-4 py-3">
+        <button
+          type="button"
+          onClick={onToggleFeatured}
+          disabled={togglingFeatured}
+          className={`cursor-pointer rounded p-1.5 transition disabled:cursor-not-allowed disabled:opacity-50 ${
+            featured ? "text-amber-500 hover:text-amber-600" : "text-slate-300 hover:text-amber-500"
+          }`}
+          title={featured ? "Quitar de Producto destacado" : "Marcar como Producto destacado"}
+        >
+          <Star className={`h-5 w-5 ${featured ? "fill-current" : ""}`} />
+        </button>
       </td>
       <td className="px-4 py-3 font-mono text-sm text-slate-600">{product.codigo}</td>
       <td className="px-4 py-3 font-medium text-slate-900">{product.name}</td>
@@ -125,7 +145,9 @@ function ProductCard({
   orderIndex,
   onEdit,
   onDelete,
+  onToggleFeatured,
   deleting,
+  togglingFeatured,
   dragHandle,
 }: {
   product: ProductRow;
@@ -135,9 +157,13 @@ function ProductCard({
   orderIndex?: number;
   onEdit: () => void;
   onDelete: () => void;
+  onToggleFeatured: () => void;
   deleting: boolean;
+  togglingFeatured: boolean;
   dragHandle?: React.ReactNode;
 }) {
+  const featured = !!product.is_featured;
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
       {dragHandle && (
@@ -146,7 +172,7 @@ function ProductCard({
         </div>
       )}
       <div className="p-3">
-        {/* Fila 1: Orden · Código · Precio */}
+        {/* Fila 1: Orden · Código · Precio · Destacado */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
           {showOrder && orderIndex != null && (
             <span className="text-slate-500">
@@ -159,6 +185,17 @@ function ProductCard({
           <span className="text-slate-500">
             Precio <span className="font-semibold text-slate-900">${formatPrice(product.price)}</span>
           </span>
+          <button
+            type="button"
+            onClick={onToggleFeatured}
+            disabled={togglingFeatured}
+            className={`ml-auto rounded p-1 transition disabled:opacity-50 ${
+              featured ? "text-amber-500" : "text-slate-300 hover:text-amber-500"
+            }`}
+            title={featured ? "Quitar de destacados" : "Destacado (v3)"}
+          >
+            <Star className={`h-5 w-5 ${featured ? "fill-current" : ""}`} />
+          </button>
         </div>
         {/* Fila 2: Nombre */}
         <p className="mt-2 line-clamp-2 font-medium text-slate-900">{product.name}</p>
@@ -197,7 +234,9 @@ function SortableProductCard({
   orderIndex,
   onEdit,
   onDelete,
+  onToggleFeatured,
   deleting,
+  togglingFeatured,
 }: {
   product: ProductRow;
   categoryName: string;
@@ -206,7 +245,9 @@ function SortableProductCard({
   orderIndex?: number;
   onEdit: () => void;
   onDelete: () => void;
+  onToggleFeatured: () => void;
   deleting: boolean;
+  togglingFeatured: boolean;
 }) {
   const {
     attributes,
@@ -243,7 +284,9 @@ function SortableProductCard({
         orderIndex={orderIndex}
         onEdit={onEdit}
         onDelete={onDelete}
+        onToggleFeatured={onToggleFeatured}
         deleting={deleting}
+        togglingFeatured={togglingFeatured}
         dragHandle={dragHandle}
       />
     </div>
@@ -255,16 +298,35 @@ function ProductRowPlain({
   categoryName,
   onEdit,
   onDelete,
+  onToggleFeatured,
   deleting,
+  togglingFeatured,
 }: {
   product: ProductRow;
   categoryName: string;
   onEdit: () => void;
   onDelete: () => void;
+  onToggleFeatured: () => void;
   deleting: boolean;
+  togglingFeatured: boolean;
 }) {
+  const featured = !!product.is_featured;
+
   return (
     <tr className="hover:bg-slate-50">
+      <td className="px-4 py-3">
+        <button
+          type="button"
+          onClick={onToggleFeatured}
+          disabled={togglingFeatured}
+          className={`cursor-pointer rounded p-1.5 transition disabled:cursor-not-allowed disabled:opacity-50 ${
+            featured ? "text-amber-500 hover:text-amber-600" : "text-slate-300 hover:text-amber-500"
+          }`}
+          title={featured ? "Quitar de Producto destacado" : "Marcar como Producto destacado"}
+        >
+          <Star className={`h-5 w-5 ${featured ? "fill-current" : ""}`} />
+        </button>
+      </td>
       <td className="px-4 py-3 font-mono text-sm text-slate-600">{product.codigo}</td>
       <td className="px-4 py-3 font-medium text-slate-900">{product.name}</td>
       <td className="px-4 py-3 text-slate-600">{categoryName}</td>
@@ -308,8 +370,31 @@ export function ProductsTable({
   const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [reordering, setReordering] = useState(false);
+  const [togglingFeaturedId, setTogglingFeaturedId] = useState<string | null>(null);
   const toast = useToast();
   const isDesktop = useIsDesktop();
+
+  const featuredCount = items.filter((p) => p.is_featured).length;
+  const maxFeatured = 16;
+
+  async function handleToggleFeatured(product: ProductRow) {
+    setTogglingFeaturedId(product.id);
+    const result = await toggleProductFeatured(product.id, !!product.is_featured);
+    setTogglingFeaturedId(null);
+    if (result.ok) {
+      setItems((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, is_featured: result.is_featured } : p))
+      );
+      toast.success(
+        result.is_featured ? "Producto destacado" : "Quitado de destacados",
+        result.is_featured
+          ? "Aparecerá en Productos destacados."
+          : "Ya no aparece en Productos destacados."
+      );
+    } else {
+      toast.error("No se pudo actualizar", result.error);
+    }
+  }
 
   useEffect(() => {
     setItems(products);
@@ -407,7 +492,9 @@ export function ProductsTable({
                       orderIndex={p.order_index}
                       onEdit={() => setEditing(p)}
                       onDelete={() => setItemToDelete({ id: p.id, name: p.name })}
+                      onToggleFeatured={() => handleToggleFeatured(p)}
                       deleting={deleting && itemToDelete?.id === p.id}
+                      togglingFeatured={togglingFeaturedId === p.id}
                     />
                   ))}
                 </div>
@@ -423,7 +510,9 @@ export function ProductsTable({
                 showCategory={true}
                 onEdit={() => setEditing(p)}
                 onDelete={() => setItemToDelete({ id: p.id, name: p.name })}
+                onToggleFeatured={() => handleToggleFeatured(p)}
                 deleting={deleting && itemToDelete?.id === p.id}
+                togglingFeatured={togglingFeaturedId === p.id}
               />
             ))
           )}
@@ -446,6 +535,9 @@ export function ProductsTable({
                     <th className="w-10 px-4 py-3 text-left text-xs font-medium text-slate-500">
                       Orden {reordering && "(guardando...)"}
                     </th>
+                    <th className="w-12 px-4 py-3 text-center text-xs font-medium text-slate-500" title="Producto destacado">
+                      ★
+                    </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Código</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Nombre</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Precio</th>
@@ -457,7 +549,7 @@ export function ProductsTable({
                 <tbody className="divide-y divide-slate-200 bg-white">
                   {displayProducts.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-12 text-center text-slate-500">
+                      <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
                         {emptyMessage}
                       </td>
                     </tr>
@@ -466,13 +558,15 @@ export function ProductsTable({
                       items={displayProducts.map((p) => p.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      {displayProducts.map((p) => (
+                      {                    displayProducts.map((p) => (
                         <SortableProductRow
                           key={p.id}
                           product={p}
                           onEdit={() => setEditing(p)}
                           onDelete={() => setItemToDelete({ id: p.id, name: p.name })}
+                          onToggleFeatured={() => handleToggleFeatured(p)}
                           deleting={deleting && itemToDelete?.id === p.id}
+                          togglingFeatured={togglingFeaturedId === p.id}
                         />
                       ))}
                     </SortableContext>
@@ -488,6 +582,9 @@ export function ProductsTable({
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
+                  <th className="w-12 px-4 py-3 text-center text-xs font-medium text-slate-500" title="Producto destacado">
+                    ★
+                  </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Código</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Nombre</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Categoría</th>
@@ -500,7 +597,7 @@ export function ProductsTable({
               <tbody className="divide-y divide-slate-200 bg-white">
                 {displayProducts.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-12 text-center text-slate-500">
+                    <td colSpan={6} className="px-4 py-12 text-center text-slate-500">
                       {emptyMessage}
                     </td>
                   </tr>
@@ -512,7 +609,9 @@ export function ProductsTable({
                       categoryName={getCategoryName(p.category_id)}
                       onEdit={() => setEditing(p)}
                       onDelete={() => setItemToDelete({ id: p.id, name: p.name })}
+                      onToggleFeatured={() => handleToggleFeatured(p)}
                       deleting={deleting && itemToDelete?.id === p.id}
+                      togglingFeatured={togglingFeaturedId === p.id}
                     />
                   ))
                 )}

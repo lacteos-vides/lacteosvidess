@@ -129,3 +129,37 @@ export async function reorderProducts(
   revalidateTag("productos-tv", { expire: 0 });
   return { ok: true };
 }
+
+const MAX_FEATURED = 14;
+
+export type ToggleFeaturedResult = { ok: true; is_featured: boolean } | { ok: false; error: string };
+
+export async function toggleProductFeatured(
+  id: string,
+  currentFeatured: boolean
+): Promise<ToggleFeaturedResult> {
+  const supabase = await createClient();
+
+  if (!currentFeatured) {
+    const { count, error: countError } = await supabase
+      .from("products")
+      .select("*", { count: "exact", head: true })
+      .eq("is_featured", true);
+    if (countError) return { ok: false, error: countError.message };
+    if ((count ?? 0) >= MAX_FEATURED) {
+      return { ok: false, error: `Máximo ${MAX_FEATURED} productos destacados. Quita la estrellita a otro para agregar este.` };
+    }
+  }
+
+  const newValue = !currentFeatured;
+  const { error } = await supabase
+    .from("products")
+    .update({ is_featured: newValue })
+    .eq("id", id);
+
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/admin/productos");
+  revalidateTag("productos-tv", { expire: 0 });
+  return { ok: true, is_featured: newValue };
+}
