@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { Video } from "@/lib/types/database";
 
@@ -22,18 +22,28 @@ export function TVVideosBoard({ initialVideos }: TVVideosBoardProps) {
   const [index, setIndex] = useState(0);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
-  // Solo reproducir el video activo desde el inicio; pausar los demás
-  useEffect(() => {
+  // Reproducir el video activo; pausar los demás (al cambiar índice o al montar)
+  const playActiveVideo = useCallback(() => {
+    const active = videoRefs.current[index];
+    if (active) {
+      active.currentTime = 0;
+      active.play().catch(() => {});
+    }
     videoRefs.current.forEach((ref, i) => {
-      if (!ref) return;
-      if (i === index) {
-        ref.currentTime = 0;
-        ref.play().catch(() => {});
-      } else {
-        ref.pause();
-      }
+      if (ref && i !== index) ref.pause();
     });
   }, [index]);
+
+  useEffect(() => {
+    playActiveVideo();
+  }, [playActiveVideo]);
+
+  // En carga directa (URL/refresh) los refs pueden no estar aún; reintentar cuando estén listos
+  useEffect(() => {
+    if (items.length === 0) return;
+    const t = setTimeout(playActiveVideo, 100);
+    return () => clearTimeout(t);
+  }, [items.length, playActiveVideo]);
 
   // Cambiar al siguiente slide solo cuando el video actual termine
   const handleVideoEnded = () => {
@@ -94,8 +104,10 @@ export function TVVideosBoard({ initialVideos }: TVVideosBoardProps) {
                         }}
                         src={item.src}
                         playsInline
+                        autoPlay
                         preload="auto"
                         onEnded={i === index ? handleVideoEnded : undefined}
+                        onCanPlay={i === index ? (e) => e.currentTarget.play().catch(() => {}) : undefined}
                         className="h-full w-full rounded-3xl object-cover p-2"
                         style={{ pointerEvents: "none" }}
                       />
