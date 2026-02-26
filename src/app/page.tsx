@@ -75,6 +75,8 @@ export default function HomePage() {
                   width={120}
                   height={120}
                   className="h-[120px] w-auto object-contain"
+                  loading="eager"
+                  priority
                 />
               </div>
               <h1

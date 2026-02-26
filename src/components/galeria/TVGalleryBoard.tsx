@@ -17,12 +17,14 @@ export function TVGalleryBoard({ initialItems }: TVGalleryBoardProps) {
         id: i.id,
         image: i.image_url,
         product: i.product.toUpperCase(),
-        price: i.price || "",
+        price: i.price != null && String(i.price).trim() !== "" ? String(i.price).trim() : null,
       })),
     [initialItems]
   );
 
   const [index, setIndex] = useState(0);
+  /** Por cada item: "cover" (horizontal) o "contain" (vertical) según dimensiones de la imagen */
+  const [imageFit, setImageFit] = useState<Record<string, "cover" | "contain">>({});
 
   useEffect(() => {
     if (items.length === 0) return;
@@ -79,13 +81,23 @@ export function TVGalleryBoard({ initialItems }: TVGalleryBoardProps) {
                     transition={{ duration: 1.2, ease: "easeInOut" }}
                     className="absolute inset-0"
                   >
-                    <div className="absolute inset-0 rounded-3xl bg-white/30 shadow-2xl ring-1 ring-white/50 backdrop-blur-sm">
+                    <div className="absolute inset-0 flex items-center justify-center rounded-3xl bg-white/30 shadow-2xl ring-1 ring-white/50 backdrop-blur-sm p-2">
                       <img
                         src={item.image}
                         alt={item.product}
                         loading="eager"
                         decoding="async"
-                        className="h-full w-full rounded-3xl object-cover p-2"
+                        className={`h-full w-full rounded-3xl object-center ${
+                          imageFit[item.id] === "contain" ? "object-contain" : "object-cover"
+                        }`}
+                        onLoad={(e) => {
+                          const img = e.currentTarget;
+                          const isVertical = img.naturalHeight > img.naturalWidth;
+                          setImageFit((prev) => ({
+                            ...prev,
+                            [item.id]: isVertical ? "contain" : "cover",
+                          }));
+                        }}
                       />
                     </div>
                   </motion.div>
@@ -114,15 +126,17 @@ export function TVGalleryBoard({ initialItems }: TVGalleryBoardProps) {
                     >
                       {current.product}
                     </span>
-                    <span
-                      className="text-5xl font-bold lg:text-8xl"
-                      style={{
-                        fontFamily: "var(--font-display), Impact, sans-serif",
-                        color: "#ca8a04",
-                      }}
-                    >
-                      ${current.price}
-                    </span>
+                    {current.price != null && (
+                      <span
+                        className="text-5xl font-bold lg:text-8xl"
+                        style={{
+                          fontFamily: "var(--font-display), Impact, sans-serif",
+                          color: "#ca8a04",
+                        }}
+                      >
+                        ${current.price}
+                      </span>
+                    )}
                   </motion.div>
                 </AnimatePresence>
               </div>
