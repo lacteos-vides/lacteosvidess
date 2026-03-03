@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { GalleryItem } from "@/lib/types/database";
+import { useCachedMediaUrls } from "@/hooks/useCachedMediaUrls";
 
 const SLIDE_DURATION_MS = 10000;
 
@@ -22,9 +23,13 @@ export function TVGalleryBoard({ initialItems }: TVGalleryBoardProps) {
     [initialItems]
   );
 
+  const urls = useMemo(() => items.map((i) => i.image), [items]);
+  const { blobUrls, isLoading } = useCachedMediaUrls(urls);
+
   const [index, setIndex] = useState(0);
-  /** Por cada item: "cover" (horizontal) o "contain" (vertical) según dimensiones de la imagen */
   const [imageFit, setImageFit] = useState<Record<string, "cover" | "contain">>({});
+
+  const nextIndex = items.length > 0 ? (index + 1) % items.length : 0;
 
   useEffect(() => {
     if (items.length === 0) return;
@@ -36,11 +41,29 @@ export function TVGalleryBoard({ initialItems }: TVGalleryBoardProps) {
 
   const current = items[index];
 
-  // Sin items: mostrar mensaje
   if (items.length === 0) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100">
         <p className="text-xl font-medium text-amber-900">No hay imágenes en la galería</p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100">
+        <p className="text-xl font-medium text-amber-900">Cargando galería…</p>
+      </div>
+    );
+  }
+
+  const hasAnyBlobUrl = blobUrls.some((u) => u != null);
+  if (!hasAnyBlobUrl) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100">
+        <p className="text-xl font-medium text-amber-900">
+          No se pudieron cargar las imágenes. Compruebe la conexión.
+        </p>
       </div>
     );
   }
@@ -70,38 +93,44 @@ export function TVGalleryBoard({ initialItems }: TVGalleryBoardProps) {
           <div className="absolute bottom-0 left-20 h-96 w-96 translate-y-1/2 rounded-full bg-amber-200 opacity-40 blur-[120px]" />
 
           <div className="relative z-10 flex h-full w-full flex-col">
-            {/* Área de la imagen - arriba; todas montadas para cache del navegador */}
+            {/* Solo montamos la imagen actual y la siguiente (Blob URLs desde IndexedDB) */}
             <div className="relative flex-1 flex items-center justify-center px-4 pb-2 pt-2">
               <div className="relative h-full w-full overflow-hidden rounded-3xl">
-                {items.map((item, i) => (
-                  <motion.div
-                    key={item.id}
-                    initial={false}
-                    animate={{ opacity: i === index ? 1 : 0 }}
-                    transition={{ duration: 1.2, ease: "easeInOut" }}
-                    className="absolute inset-0"
-                  >
-                    <div className="absolute inset-0 flex items-center justify-center rounded-3xl bg-white/30 shadow-2xl ring-1 ring-white/50 backdrop-blur-sm p-2">
-                      <img
-                        src={item.image}
-                        alt={item.product}
-                        loading="eager"
-                        decoding="async"
-                        className={`h-full w-full rounded-3xl object-center ${
-                          imageFit[item.id] === "contain" ? "object-contain" : "object-cover"
-                        }`}
-                        onLoad={(e) => {
-                          const img = e.currentTarget;
-                          const isVertical = img.naturalHeight > img.naturalWidth;
-                          setImageFit((prev) => ({
-                            ...prev,
-                            [item.id]: isVertical ? "contain" : "cover",
-                          }));
-                        }}
-                      />
-                    </div>
-                  </motion.div>
-                ))}
+                {[index, nextIndex].map((i) => {
+                  const blobUrl = blobUrls[i];
+                  const item = items[i];
+                  if (!item || blobUrl == null) return null;
+
+                  return (
+                    <motion.div
+                      key={item.id}
+                      initial={false}
+                      animate={{ opacity: i === index ? 1 : 0 }}
+                      transition={{ duration: 1.2, ease: "easeInOut" }}
+                      className="absolute inset-0"
+                    >
+                      <div className="absolute inset-0 flex items-center justify-center rounded-3xl bg-white/30 shadow-2xl ring-1 ring-white/50 backdrop-blur-sm p-2">
+                        <img
+                          src={blobUrl}
+                          alt={item.product}
+                          loading="eager"
+                          decoding="async"
+                          className={`h-full w-full rounded-3xl object-center ${
+                            imageFit[item.id] === "contain" ? "object-contain" : "object-cover"
+                          }`}
+                          onLoad={(e) => {
+                            const img = e.currentTarget;
+                            const isVertical = img.naturalHeight > img.naturalWidth;
+                            setImageFit((prev) => ({
+                              ...prev,
+                              [item.id]: isVertical ? "contain" : "cover",
+                            }));
+                          }}
+                        />
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
             </div>
 

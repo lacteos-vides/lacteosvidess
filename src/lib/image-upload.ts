@@ -35,7 +35,7 @@ export async function uploadImageWithProgress(
     const xhr = new XMLHttpRequest();
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("cache-control", "3600");
+    formData.append("cache-control", "31536000"); // 1 año: reduce re-descargas desde Supabase
 
     xhr.upload.addEventListener("progress", (e) => {
       if (e.lengthComputable) {

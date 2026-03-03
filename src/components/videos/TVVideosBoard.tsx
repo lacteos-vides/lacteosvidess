@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { Video } from "@/lib/types/database";
+import { useCachedMediaUrls } from "@/hooks/useCachedMediaUrls";
 
 interface TVVideosBoardProps {
   initialVideos: Video[];
@@ -19,44 +20,61 @@ export function TVVideosBoard({ initialVideos }: TVVideosBoardProps) {
     [initialVideos]
   );
 
-  const [index, setIndex] = useState(0);
-  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  const urls = useMemo(() => items.map((i) => i.src), [items]);
+  const { blobUrls, isLoading } = useCachedMediaUrls(urls);
 
-  // Reproducir el video activo; pausar los demás (al cambiar índice o al montar)
+  const [index, setIndex] = useState(0);
+  const activeVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  const nextIndex = items.length > 0 ? (index + 1) % items.length : 0;
+
   const playActiveVideo = useCallback(() => {
-    const active = videoRefs.current[index];
-    if (active) {
-      active.currentTime = 0;
-      active.play().catch(() => {});
+    const el = activeVideoRef.current;
+    if (el) {
+      el.currentTime = 0;
+      el.play().catch(() => {});
     }
-    videoRefs.current.forEach((ref, i) => {
-      if (ref && i !== index) ref.pause();
-    });
-  }, [index]);
+  }, []);
 
   useEffect(() => {
     playActiveVideo();
-  }, [playActiveVideo]);
+  }, [playActiveVideo, index]);
 
-  // En carga directa (URL/refresh) los refs pueden no estar aún; reintentar cuando estén listos
   useEffect(() => {
-    if (items.length === 0) return;
+    if (items.length === 0 || isLoading) return;
     const t = setTimeout(playActiveVideo, 100);
     return () => clearTimeout(t);
-  }, [items.length, playActiveVideo]);
+  }, [items.length, isLoading, playActiveVideo]);
 
-  // Cambiar al siguiente slide solo cuando el video actual termine
   const handleVideoEnded = () => {
     setIndex((i) => (i + 1) % items.length);
   };
 
   const current = items[index];
 
-  // Sin videos: mostrar mensaje
   if (items.length === 0) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100">
         <p className="text-xl font-medium text-amber-900">No hay videos disponibles</p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100">
+        <p className="text-xl font-medium text-amber-900">Cargando videos…</p>
+      </div>
+    );
+  }
+
+  const hasAnyBlobUrl = blobUrls.some((u) => u != null);
+  if (!hasAnyBlobUrl) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100">
+        <p className="text-xl font-medium text-amber-900">
+          No se pudieron cargar los videos. Compruebe la conexión.
+        </p>
       </div>
     );
   }
@@ -86,34 +104,42 @@ export function TVVideosBoard({ initialVideos }: TVVideosBoardProps) {
           <div className="absolute bottom-0 left-20 h-96 w-96 translate-y-1/2 rounded-full bg-amber-200 opacity-40 blur-[120px]" />
 
           <div className="relative z-10 flex h-full w-full flex-col">
-            {/* Área del video - todos permanecen en DOM para caché, solo mostramos el activo */}
+            {/* Solo montamos el video actual y el siguiente (Blob URLs desde IndexedDB = sin más egress) */}
             <div className="relative flex-1 flex items-center justify-center px-4 pb-2 pt-2">
               <div className="relative h-full w-full overflow-hidden rounded-3xl">
-                {items.map((item, i) => (
-                  <motion.div
-                    key={item.id}
-                    initial={false}
-                    animate={{ opacity: i === index ? 1 : 0 }}
-                    transition={{ duration: 1.2, ease: "easeInOut" }}
-                    className="absolute inset-0"
-                  >
-                    <div className="absolute inset-0 overflow-hidden rounded-3xl bg-white/30 shadow-2xl ring-1 ring-white/50 backdrop-blur-sm">
-                      <video
-                        ref={(el) => {
-                          videoRefs.current[i] = el;
-                        }}
-                        src={item.src}
-                        playsInline
-                        autoPlay
-                        preload="auto"
-                        onEnded={i === index ? handleVideoEnded : undefined}
-                        onCanPlay={i === index ? (e) => e.currentTarget.play().catch(() => {}) : undefined}
-                        className="h-full w-full rounded-3xl object-cover p-2"
-                        style={{ pointerEvents: "none" }}
-                      />
-                    </div>
-                  </motion.div>
-                ))}
+                {[index, nextIndex].map((i) => {
+                  const blobUrl = blobUrls[i];
+                  const item = items[i];
+                  if (!item || blobUrl == null) return null;
+
+                  return (
+                    <motion.div
+                      key={item.id}
+                      initial={false}
+                      animate={{ opacity: i === index ? 1 : 0 }}
+                      transition={{ duration: 1.2, ease: "easeInOut" }}
+                      className="absolute inset-0"
+                    >
+                      <div className="absolute inset-0 overflow-hidden rounded-3xl bg-white/30 shadow-2xl ring-1 ring-white/50 backdrop-blur-sm">
+                        <video
+                          ref={i === index ? activeVideoRef : undefined}
+                          src={blobUrl}
+                          playsInline
+                          muted={i !== index}
+                          preload={i === index ? "auto" : "metadata"}
+                          onEnded={i === index ? handleVideoEnded : undefined}
+                          onCanPlay={
+                            i === index
+                              ? (e) => e.currentTarget.play().catch(() => {})
+                              : undefined
+                          }
+                          className="h-full w-full rounded-3xl object-cover p-2"
+                          style={{ pointerEvents: "none" }}
+                        />
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
             </div>
 
