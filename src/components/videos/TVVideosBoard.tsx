@@ -30,15 +30,41 @@ export function TVVideosBoard({ initialVideos }: TVVideosBoardProps) {
 
   const playActiveVideo = useCallback(() => {
     const el = activeVideoRef.current;
-    if (el) {
-      el.currentTime = 0;
+    if (!el) return;
+
+    el.currentTime = 0;
+
+    // Intentar reproducir con sonido (comportamiento ideal).
+    // Si el navegador bloquea el autoplay con sonido, volvemos a intentar en mute
+    // para que al menos el video se vea sin requerir interacción inmediata.
+    el.play().catch(() => {
+      el.muted = true;
       el.play().catch(() => {});
-    }
+    });
   }, []);
 
   useEffect(() => {
     playActiveVideo();
   }, [playActiveVideo, index]);
+
+  // Si el navegador bloqueó el autoplay con sonido, necesitaremos
+  // un gesto del usuario (un clic en cualquier parte) para habilitar sonido.
+  // Este listener vuelve a intentar reproducir el video activo con sonido.
+  useEffect(() => {
+    const handleUserGesture = () => {
+      const el = activeVideoRef.current;
+      if (!el) return;
+
+      el.muted = false;
+      el.currentTime = 0;
+      el.play().catch(() => {});
+    };
+
+    window.addEventListener("pointerdown", handleUserGesture);
+    return () => {
+      window.removeEventListener("pointerdown", handleUserGesture);
+    };
+  }, []);
 
   useEffect(() => {
     if (items.length === 0 || isLoading) return;
