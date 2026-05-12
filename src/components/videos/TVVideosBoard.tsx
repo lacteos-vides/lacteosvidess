@@ -21,10 +21,16 @@ export function TVVideosBoard({ initialVideos }: TVVideosBoardProps) {
   );
 
   const urls = useMemo(() => items.map((i) => i.src), [items]);
-  const { blobUrls, isLoading } = useCachedMediaUrls(urls);
+  const [mediaCycleKey, setMediaCycleKey] = useState(0);
+  const { blobUrls, isLoading } = useCachedMediaUrls(urls, mediaCycleKey);
 
   const [index, setIndex] = useState(0);
+  const indexRef = useRef(0);
   const activeVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    indexRef.current = index;
+  }, [index]);
 
   const nextIndex = items.length > 0 ? (index + 1) % items.length : 0;
 
@@ -72,9 +78,14 @@ export function TVVideosBoard({ initialVideos }: TVVideosBoardProps) {
     return () => clearTimeout(t);
   }, [items.length, isLoading, playActiveVideo]);
 
-  const handleVideoEnded = () => {
-    setIndex((i) => (i + 1) % items.length);
-  };
+  const handleVideoEnded = useCallback(() => {
+    const len = items.length;
+    if (len === 0) return;
+    if (indexRef.current === len - 1) {
+      setMediaCycleKey((k) => k + 1);
+    }
+    setIndex((i) => (i + 1) % len);
+  }, [items.length]);
 
   const current = items[index];
 
