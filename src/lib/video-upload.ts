@@ -1,5 +1,6 @@
 /**
- * Upload de video a Supabase Storage con progreso
+ * Utilidades para validación de archivos de video y subida con progreso a una
+ * presigned URL (Cloudflare R2). Mantenidas en un archivo cliente-seguro.
  */
 
 const MAX_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
@@ -18,24 +19,18 @@ export function validateFileSize(size: number): string | null {
   return null;
 }
 
-export async function uploadVideoWithProgress(
+/**
+ * Sube un archivo con PUT a una presigned URL devolviendo progreso.
+ * Los headers deben coincidir con los firmados al generar la URL en el servidor.
+ */
+export async function uploadFileToPresignedUrl(
   file: File,
-  path: string,
-  authToken: string,
+  uploadUrl: string,
+  headers: Record<string, string>,
   onProgress: (percent: number) => void
-): Promise<{ publicUrl: string }> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-
-  if (!supabaseUrl) {
-    throw new Error("Falta NEXT_PUBLIC_SUPABASE_URL");
-  }
-
+): Promise<void> {
   return new Promise((resolve, reject) => {
-    const url = `${supabaseUrl}/storage/v1/object/videos/${path}`;
     const xhr = new XMLHttpRequest();
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("cache-control", "31536000"); // 1 año: reduce re-descargas desde Supabase
 
     xhr.upload.addEventListener("progress", (e) => {
       if (e.lengthComputable) {
@@ -48,25 +43,20 @@ export async function uploadVideoWithProgress(
 
     xhr.addEventListener("load", () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        const publicUrl = `${supabaseUrl}/storage/v1/object/public/videos/${path}`;
-        resolve({ publicUrl });
+        resolve();
       } else {
-        let msg = `Error ${xhr.status}`;
-        try {
-          const body = JSON.parse(xhr.responseText);
-          msg = body?.message || body?.error_description || msg;
-        } catch {
-          // ignore
-        }
-        reject(new Error(msg));
+        const detail = xhr.responseText || xhr.statusText || "";
+        reject(new Error(`Error ${xhr.status}: ${detail}`.trim()));
       }
     });
 
-    xhr.addEventListener("error", () => reject(new Error("Error de red")));
-    xhr.addEventListener("abort", () => reject(new Error("Subida cancelada")));
+    xhr.addEventListener("error", () => reject(new Error("Error de red al subir el video.")));
+    xhr.addEventListener("abort", () => reject(new Error("Subida cancelada.")));
 
-    xhr.open("POST", url);
-    xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
-    xhr.send(formData);
+    xhr.open("PUT", uploadUrl);
+    for (const [key, value] of Object.entries(headers)) {
+      xhr.setRequestHeader(key, value);
+    }
+    xhr.send(file);
   });
 }

@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { Video } from "@/lib/types/database";
-import { useCachedMediaUrls } from "@/hooks/useCachedMediaUrls";
 
 interface TVVideosBoardProps {
   initialVideos: Video[];
@@ -20,29 +19,19 @@ export function TVVideosBoard({ initialVideos }: TVVideosBoardProps) {
     [initialVideos]
   );
 
-  const urls = useMemo(() => items.map((i) => i.src), [items]);
-  const [mediaCycleKey, setMediaCycleKey] = useState(0);
-  const { blobUrls, isLoading } = useCachedMediaUrls(urls, mediaCycleKey);
-
   const [index, setIndex] = useState(0);
-  const indexRef = useRef(0);
   const activeVideoRef = useRef<HTMLVideoElement | null>(null);
-
-  useEffect(() => {
-    indexRef.current = index;
-  }, [index]);
 
   const nextIndex = items.length > 0 ? (index + 1) % items.length : 0;
 
-  const playActiveVideo = useCallback(() => {
+  // Intenta reproducir con audio (comportamiento ideal). Si el navegador bloquea
+  // el autoplay con sonido, hace fallback a mute para que al menos el video se vea;
+  // un gesto del usuario más adelante reactiva el audio.
+  const playActive = useCallback(() => {
     const el = activeVideoRef.current;
     if (!el) return;
-
     el.currentTime = 0;
-
-    // Intentar reproducir con sonido (comportamiento ideal).
-    // Si el navegador bloquea el autoplay con sonido, volvemos a intentar en mute
-    // para que al menos el video se vea sin requerir interacción inmediata.
+    el.muted = false;
     el.play().catch(() => {
       el.muted = true;
       el.play().catch(() => {});
@@ -50,41 +39,26 @@ export function TVVideosBoard({ initialVideos }: TVVideosBoardProps) {
   }, []);
 
   useEffect(() => {
-    playActiveVideo();
-  }, [playActiveVideo, index]);
+    if (items.length === 0) return;
+    playActive();
+  }, [playActive, index, items.length]);
 
-  // Si el navegador bloqueó el autoplay con sonido, necesitaremos
-  // un gesto del usuario (un clic en cualquier parte) para habilitar sonido.
-  // Este listener vuelve a intentar reproducir el video activo con sonido.
+  // Si el autoplay con sonido fue bloqueado, un gesto del usuario (clic/tap)
+  // reactiva el audio sobre el video activo.
   useEffect(() => {
-    const handleUserGesture = () => {
+    const handleGesture = () => {
       const el = activeVideoRef.current;
       if (!el) return;
-
       el.muted = false;
-      el.currentTime = 0;
       el.play().catch(() => {});
     };
-
-    window.addEventListener("pointerdown", handleUserGesture);
-    return () => {
-      window.removeEventListener("pointerdown", handleUserGesture);
-    };
+    window.addEventListener("pointerdown", handleGesture);
+    return () => window.removeEventListener("pointerdown", handleGesture);
   }, []);
 
-  useEffect(() => {
-    if (items.length === 0 || isLoading) return;
-    const t = setTimeout(playActiveVideo, 100);
-    return () => clearTimeout(t);
-  }, [items.length, isLoading, playActiveVideo]);
-
   const handleVideoEnded = useCallback(() => {
-    const len = items.length;
-    if (len === 0) return;
-    if (indexRef.current === len - 1) {
-      setMediaCycleKey((k) => k + 1);
-    }
-    setIndex((i) => (i + 1) % len);
+    if (items.length === 0) return;
+    setIndex((i) => (i + 1) % items.length);
   }, [items.length]);
 
   const current = items[index];
@@ -93,25 +67,6 @@ export function TVVideosBoard({ initialVideos }: TVVideosBoardProps) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100">
         <p className="text-xl font-medium text-amber-900">No hay videos disponibles</p>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100">
-        <p className="text-xl font-medium text-amber-900">Cargando videos…</p>
-      </div>
-    );
-  }
-
-  const hasAnyBlobUrl = blobUrls.some((u) => u != null);
-  if (!hasAnyBlobUrl) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100">
-        <p className="text-xl font-medium text-amber-900">
-          No se pudieron cargar los videos. Compruebe la conexión.
-        </p>
       </div>
     );
   }
@@ -141,33 +96,41 @@ export function TVVideosBoard({ initialVideos }: TVVideosBoardProps) {
           <div className="absolute bottom-0 left-20 h-96 w-96 translate-y-1/2 rounded-full bg-amber-200 opacity-40 blur-[120px]" />
 
           <div className="relative z-10 flex h-full w-full flex-col">
-            {/* Solo montamos el video actual y el siguiente (Blob URLs desde IndexedDB = sin más egress) */}
+            {/* Video actual + siguiente (precarga ligera). El navegador reutiliza la
+                respuesta cacheada del archivo en lugar de re-descargarla del CDN. */}
             <div className="relative flex-1 flex items-center justify-center px-4 pb-2 pt-2">
               <div className="relative h-full w-full overflow-hidden rounded-3xl">
                 {[index, nextIndex].map((i) => {
-                  const blobUrl = blobUrls[i];
                   const item = items[i];
-                  if (!item || blobUrl == null) return null;
+                  if (!item) return null;
+                  const isActive = i === index;
 
                   return (
                     <motion.div
                       key={item.id}
                       initial={false}
-                      animate={{ opacity: i === index ? 1 : 0 }}
+                      animate={{ opacity: isActive ? 1 : 0 }}
                       transition={{ duration: 1.2, ease: "easeInOut" }}
                       className="absolute inset-0"
                     >
                       <div className="absolute inset-0 overflow-hidden rounded-3xl bg-white/30 shadow-2xl ring-1 ring-white/50 backdrop-blur-sm">
                         <video
-                          ref={i === index ? activeVideoRef : undefined}
-                          src={blobUrl}
+                          ref={isActive ? activeVideoRef : undefined}
+                          src={item.src}
                           playsInline
-                          muted={i !== index}
-                          preload={i === index ? "auto" : "metadata"}
-                          onEnded={i === index ? handleVideoEnded : undefined}
+                          autoPlay={isActive}
+                          muted={!isActive}
+                          preload={isActive ? "auto" : "metadata"}
+                          onEnded={isActive ? handleVideoEnded : undefined}
                           onCanPlay={
-                            i === index
-                              ? (e) => e.currentTarget.play().catch(() => {})
+                            isActive
+                              ? (e) => {
+                                  const el = e.currentTarget;
+                                  el.play().catch(() => {
+                                    el.muted = true;
+                                    el.play().catch(() => {});
+                                  });
+                                }
                               : undefined
                           }
                           className="h-full w-full rounded-3xl object-cover p-2"

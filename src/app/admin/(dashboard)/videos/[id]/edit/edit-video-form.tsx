@@ -3,10 +3,18 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { updateVideo, updateVideoWithUrl, type ActionResult } from "../../actions";
-import { validateFileSize, formatFileSize, MAX_SIZE_MB } from "@/lib/video-upload";
-import { uploadVideoWithProgress } from "@/lib/video-upload";
+import {
+  getVideoUploadUrl,
+  updateVideo,
+  updateVideoWithUrl,
+  type ActionResult,
+} from "../../actions";
+import {
+  uploadFileToPresignedUrl,
+  validateFileSize,
+  formatFileSize,
+  MAX_SIZE_MB,
+} from "@/lib/video-upload";
 import { Video as VideoIcon, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import type { Video } from "@/lib/types/database";
@@ -70,21 +78,27 @@ export function EditVideoForm({ video }: Props) {
     setUploadProgress(0);
 
     try {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error("Sesión expirada", "Inicia sesión nuevamente.");
+      const presigned = await getVideoUploadUrl({
+        filename: selectedFile.name,
+        contentType: selectedFile.type || "video/mp4",
+        size: selectedFile.size,
+      });
+
+      if (!presigned.ok) {
+        toast.error("Error al preparar la subida", presigned.error);
         setUploading(false);
         return;
       }
 
-      const ext = selectedFile.name.split(".").pop()?.toLowerCase() || "mp4";
-      const path = `${crypto.randomUUID()}.${ext}`;
+      const { uploadUrl, publicUrl, contentType, cacheControl } = presigned.upload;
 
-      const { publicUrl } = await uploadVideoWithProgress(
+      await uploadFileToPresignedUrl(
         selectedFile,
-        path,
-        session.access_token,
+        uploadUrl,
+        {
+          "Content-Type": contentType,
+          "Cache-Control": cacheControl,
+        },
         (percent) => setUploadProgress(percent)
       );
 
