@@ -3,67 +3,65 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { validateVideo, type VideoFormErrors } from "@/lib/validations/video";
-
-const BUCKET = "videos";
+import {
+  createVideoPresignedUpload,
+  deleteVideoObject,
+  extractVideoKeyFromPublicUrl,
+  ensureVideoHttpCacheHeaders,
+  isR2VideoPublicUrl,
+  type PresignedVideoUpload,
+} from "@/lib/r2";
 
 export type ActionResult = { ok: true } | { ok: false; errors: VideoFormErrors };
 
-export async function createVideo(
-  _prev: ActionResult,
-  formData: FormData
-): Promise<ActionResult> {
-  const name = (formData.get("name") as string)?.trim() ?? "";
-  const order_index = parseInt(String(formData.get("order_index") ?? "1"), 10);
-  const file = formData.get("file") as File | null;
+const ALLOWED_EXT = ["mp4", "webm", "ogg", "mov"];
+const MAX_BYTES = 50 * 1024 * 1024; // 50 MB
 
+export type PresignedUploadResult =
+  | { ok: true; upload: PresignedVideoUpload }
+  | { ok: false; error: string };
+
+/**
+ * Genera una presigned URL para subir un video a R2. El cliente debe enviar el
+ * archivo con PUT usando exactamente las cabeceras devueltas (Content-Type y
+ * Cache-Control), que vienen firmadas.
+ */
+export async function getVideoUploadUrl(params: {
+  filename: string;
+  contentType: string;
+  size: number;
+}): Promise<PresignedUploadResult> {
   const supabase = await createClient();
-  const { data: existing } = await supabase.from("videos").select("order_index");
-  const existingOrders = (existing ?? []).map((v) => v.order_index);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "No autenticado." };
 
-  const errors = validateVideo({ name, order_index, existingOrders });
-  if (Object.keys(errors).length > 0) return { ok: false, errors };
-
-  if (!file || !(file instanceof File) || file.size === 0) {
-    return { ok: false, errors: { file: "Selecciona un archivo de video." } };
+  if (!Number.isFinite(params.size) || params.size <= 0) {
+    return { ok: false, error: "Tamaño de archivo inválido." };
+  }
+  if (params.size > MAX_BYTES) {
+    return {
+      ok: false,
+      error: `El video supera el límite de 50 MB. Tamaño: ${(params.size / (1024 * 1024)).toFixed(1)} MB`,
+    };
   }
 
-  const MAX_BYTES = 50 * 1024 * 1024; // 50 MB
-  if (file.size > MAX_BYTES) {
-    return { ok: false, errors: { file: `El video supera el límite de 50 MB. Tamaño: ${(file.size / (1024 * 1024)).toFixed(1)} MB` } };
+  const ext = params.filename.split(".").pop()?.toLowerCase() ?? "";
+  if (!ALLOWED_EXT.includes(ext)) {
+    return { ok: false, error: "Formatos permitidos: mp4, webm, ogg, mov" };
   }
 
-  const ext = file.name.split(".").pop()?.toLowerCase() || "mp4";
-  const allowed = ["mp4", "webm", "ogg", "mov"];
-  if (!allowed.includes(ext)) {
-    return { ok: false, errors: { file: "Formatos permitidos: mp4, webm, ogg, mov" } };
+  const contentType = params.contentType || "video/mp4";
+  const key = `${crypto.randomUUID()}.${ext}`;
+
+  try {
+    const upload = await createVideoPresignedUpload({ key, contentType });
+    return { ok: true, upload };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "No se pudo generar la URL de subida.",
+    };
   }
-
-  const path = `${crypto.randomUUID()}.${ext}`;
-
-  const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, {
-    contentType: file.type,
-    upsert: false,
-  });
-
-  if (uploadError) {
-    return { ok: false, errors: { file: uploadError.message } };
-  }
-
-  const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  const file_url = urlData.publicUrl;
-
-  const { error: insertError } = await supabase
-    .from("videos")
-    .insert({ name, file_url, order_index });
-
-  if (insertError) {
-    await supabase.storage.from(BUCKET).remove([path]);
-    return { ok: false, errors: { name: insertError.message } };
-  }
-
-  revalidatePath("/admin/videos");
-  revalidateTag("videos-tv", { expire: 0 });
-  return { ok: true };
 }
 
 /** Guarda el registro del video cuando la subida se hizo desde el cliente (con progreso) */
@@ -84,6 +82,23 @@ export async function saveVideoRecord(
 
   if (!file_url) {
     return { ok: false, errors: { file: "Falta la URL del video." } };
+  }
+
+  const key = extractVideoKeyFromPublicUrl(file_url);
+  if (key && isR2VideoPublicUrl(file_url)) {
+    try {
+      await ensureVideoHttpCacheHeaders(key);
+    } catch (err) {
+      return {
+        ok: false,
+        errors: {
+          file:
+            err instanceof Error
+              ? err.message
+              : "No se pudieron fijar las cabeceras HTTP del video en R2.",
+        },
+      };
+    }
   }
 
   const { error } = await supabase
@@ -130,7 +145,7 @@ export async function updateVideo(
   return { ok: true };
 }
 
-/** Actualiza el video cuando la subida del archivo se hizo desde el cliente (evita límite 1MB) */
+/** Actualiza el video cuando la subida del archivo se hizo desde el cliente */
 export async function updateVideoWithUrl(
   id: string,
   _prev: ActionResult,
@@ -154,9 +169,30 @@ export async function updateVideoWithUrl(
     return { ok: false, errors: { file: "Falta la URL del video." } };
   }
 
-  const { data: current } = await supabase.from("videos").select("file_url").eq("id", id).single();
-  const oldFileName = current?.file_url
-    ? new URL(current.file_url).pathname.split("/").pop()
+  const newKey = extractVideoKeyFromPublicUrl(file_url);
+  if (newKey && isR2VideoPublicUrl(file_url)) {
+    try {
+      await ensureVideoHttpCacheHeaders(newKey);
+    } catch (err) {
+      return {
+        ok: false,
+        errors: {
+          file:
+            err instanceof Error
+              ? err.message
+              : "No se pudieron fijar las cabeceras HTTP del video en R2.",
+        },
+      };
+    }
+  }
+
+  const { data: current } = await supabase
+    .from("videos")
+    .select("file_url")
+    .eq("id", id)
+    .single();
+  const oldKey = current?.file_url
+    ? extractVideoKeyFromPublicUrl(current.file_url)
     : null;
 
   const { error: updateError } = await supabase
@@ -166,11 +202,11 @@ export async function updateVideoWithUrl(
 
   if (updateError) return { ok: false, errors: { name: updateError.message } };
 
-  if (oldFileName) {
+  if (oldKey && oldKey !== newKey) {
     try {
-      await supabase.storage.from(BUCKET).remove([oldFileName]);
+      await deleteVideoObject(oldKey);
     } catch {
-      // Ignorar si falla borrar el antiguo
+      // Ignorar si falla borrar el antiguo: no debe bloquear la actualización.
     }
   }
 
@@ -183,14 +219,17 @@ export async function updateVideoWithUrl(
 export async function deleteVideo(id: string): Promise<{ ok: boolean; error?: string }> {
   const supabase = await createClient();
 
-  const { data: video } = await supabase.from("videos").select("file_url").eq("id", id).single();
-  if (video?.file_url) {
+  const { data: video } = await supabase
+    .from("videos")
+    .select("file_url")
+    .eq("id", id)
+    .single();
+  const key = video?.file_url ? extractVideoKeyFromPublicUrl(video.file_url) : null;
+  if (key) {
     try {
-      const segments = new URL(video.file_url).pathname.split("/");
-      const fileName = segments[segments.length - 1];
-      if (fileName) await supabase.storage.from(BUCKET).remove([fileName]);
+      await deleteVideoObject(key);
     } catch {
-      // Continuar aunque falle borrar del storage
+      // Continuar aunque falle borrar del storage.
     }
   }
 

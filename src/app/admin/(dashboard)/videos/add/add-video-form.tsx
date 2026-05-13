@@ -2,11 +2,10 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { saveVideoRecord } from "../actions";
+import { getVideoUploadUrl, saveVideoRecord } from "../actions";
 import { useToast } from "@/components/ui/toast";
 import {
-  uploadVideoWithProgress,
+  uploadFileToPresignedUrl,
   validateFileSize,
   formatFileSize,
   MAX_SIZE_MB,
@@ -71,21 +70,27 @@ export function AddVideoForm({ defaultOrder }: Props) {
     setUploadProgress(0);
 
     try {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error("Sesión expirada", "Inicia sesión nuevamente.");
+      const presigned = await getVideoUploadUrl({
+        filename: selectedFile.name,
+        contentType: selectedFile.type || "video/mp4",
+        size: selectedFile.size,
+      });
+
+      if (!presigned.ok) {
+        toast.error("Error al preparar la subida", presigned.error);
         setUploading(false);
         return;
       }
 
-      const ext = selectedFile.name.split(".").pop()?.toLowerCase() || "mp4";
-      const path = `${crypto.randomUUID()}.${ext}`;
+      const { uploadUrl, publicUrl, contentType, cacheControl } = presigned.upload;
 
-      const { publicUrl } = await uploadVideoWithProgress(
+      await uploadFileToPresignedUrl(
         selectedFile,
-        path,
-        session.access_token,
+        uploadUrl,
+        {
+          "Content-Type": contentType,
+          "Cache-Control": cacheControl,
+        },
         (percent) => setUploadProgress(percent)
       );
 
