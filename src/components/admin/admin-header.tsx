@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   X,
+  KeyRound,
 } from "lucide-react";
 
 const navLinks = [
@@ -20,6 +21,7 @@ const navLinks = [
   { href: "/admin/productos", icon: Package, label: "Productos" },
   { href: "/admin/galeria", icon: Images, label: "Galería" },
   { href: "/admin/videos", icon: Video, label: "Videos" },
+  { href: "/admin/cuenta", icon: KeyRound, label: "Cuenta" },
 ];
 
 export function AdminHeader() {
