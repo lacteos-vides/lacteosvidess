@@ -8,6 +8,7 @@ import {
   validateChangePassword,
 } from "@/lib/validations/password";
 import { AlertCircle, Check, Loader2, Lock, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 type Props = {
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export function ChangePasswordForm({ email }: Props) {
+  const router = useRouter();
   const toast = useToast();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -80,13 +82,11 @@ export function ChangePasswordForm({ email }: Props) {
         return;
       }
 
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
       toast.success(
         "Contraseña actualizada",
         "Tu nueva contraseña ya está activa."
       );
+      router.push("/admin");
     } catch {
       setError("Ocurrió un error. Intenta de nuevo.");
     } finally {
