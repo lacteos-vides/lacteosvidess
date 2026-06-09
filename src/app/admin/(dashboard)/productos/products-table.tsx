@@ -32,6 +32,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Pencil, Trash2, GripVertical, Star } from "lucide-react";
 import { deleteProduct, reorderProducts, toggleProductFeatured } from "./actions";
+import { AuditInfoTooltip } from "@/components/ui/audit-info-tooltip";
 import { DeleteConfirmModal } from "@/components/ui/delete-confirm-modal";
 import { EditProductModal } from "./edit-product-modal";
 import { useToast } from "@/components/ui/toast";
@@ -45,6 +46,10 @@ type ProductRow = {
   order_index: number;
   category_id: string;
   is_featured?: boolean;
+  created_at?: string | null;
+  created_by?: string | null;
+  updated_at?: string | null;
+  updated_by?: string | null;
 };
 
 type Category = { id: string; name: string; order_index: number };
@@ -116,6 +121,12 @@ function SortableProductRow({
       </td>
       <td className="px-4 py-3 text-right">
         <div className="flex cursor-pointer justify-end gap-2">
+          <AuditInfoTooltip
+            created_at={product.created_at}
+            created_by={product.created_by}
+            updated_at={product.updated_at}
+            updated_by={product.updated_by}
+          />
           <button
             onClick={onEdit}
             className="cursor-pointer rounded p-1.5 text-slate-500 hover:bg-slate-100 hover:text-amber-600"
@@ -204,7 +215,13 @@ function ProductCard({
           <p className="mt-1 text-xs text-slate-500">Categoría: {categoryName}</p>
         )}
         {/* Botones */}
-        <div className="mt-3 flex cursor-pointer gap-2">
+        <div className="mt-3 flex cursor-pointer items-center gap-2">
+          <AuditInfoTooltip
+            created_at={product.created_at}
+            created_by={product.created_by}
+            updated_at={product.updated_at}
+            updated_by={product.updated_by}
+          />
           <button
             onClick={onEdit}
             className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2 text-sm font-medium text-slate-900 transition hover:bg-amber-400"
@@ -335,6 +352,12 @@ function ProductRowPlain({
       </td>
       <td className="px-4 py-3 text-right">
         <div className="flex cursor-pointer justify-end gap-2">
+          <AuditInfoTooltip
+            created_at={product.created_at}
+            created_by={product.created_by}
+            updated_at={product.updated_at}
+            updated_by={product.updated_by}
+          />
           <button
             onClick={onEdit}
             className="cursor-pointer rounded p-1.5 text-slate-500 hover:bg-slate-100 hover:text-amber-600"
