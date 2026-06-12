@@ -1,3 +1,7 @@
+import {
+  ADMIN_SESSION_COOKIE,
+  isAdminSessionExpired,
+} from "@/lib/auth/admin-session";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -17,8 +21,8 @@ export async function proxy(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            response.cookies.set(name, value)
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
           );
         },
       },
@@ -32,8 +36,26 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isAdminRoute = pathname.startsWith("/admin");
   const isLoginPage = pathname === "/admin/login";
+  const sessionStart = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+  const sessionExpired = isAdminSessionExpired(sessionStart);
 
-  if (isLoginPage && user) {
+  if (user && isAdminRoute && sessionExpired) {
+    await supabase.auth.signOut();
+
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/admin/login";
+    redirectUrl.searchParams.set("reason", "session_expired");
+
+    const redirectResponse = NextResponse.redirect(redirectUrl);
+    response.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value);
+    });
+    redirectResponse.cookies.delete(ADMIN_SESSION_COOKIE);
+
+    return redirectResponse;
+  }
+
+  if (isLoginPage && user && !sessionExpired) {
     return NextResponse.redirect(new URL("/admin", request.url));
   }
 

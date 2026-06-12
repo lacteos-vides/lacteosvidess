@@ -1,10 +1,18 @@
 "use server";
 
 import { revalidatePath, revalidateTag } from "next/cache";
+import { getAuthenticatedUserEmail } from "@/lib/auth/get-user-email";
 import { createClient } from "@/lib/supabase/server";
 import { validateProduct, type ProductFormErrors } from "@/lib/validations/product";
 
 export type ActionResult = { ok: true } | { ok: false; errors: ProductFormErrors };
+
+function productAuditUpdate(email: string) {
+  return {
+    updated_by: email,
+    updated_at: new Date().toISOString(),
+  };
+}
 
 export async function createProduct(
   _prev: ActionResult,
@@ -17,6 +25,11 @@ export async function createProduct(
   const order_index = parseInt(String(formData.get("order_index") ?? "1"), 10);
 
   const supabase = await createClient();
+  const userEmail = await getAuthenticatedUserEmail(supabase);
+  if (!userEmail) {
+    return { ok: false, errors: { codigo: "No autenticado." } };
+  }
+
   const { data: existing } = await supabase
     .from("products")
     .select("order_index")
@@ -40,6 +53,7 @@ export async function createProduct(
     category_id,
     order_index,
     estado: "activo",
+    created_by: userEmail,
   });
 
   if (error) {
@@ -63,6 +77,11 @@ export async function updateProduct(
   const order_index = parseInt(String(formData.get("order_index") ?? "1"), 10);
 
   const supabase = await createClient();
+  const userEmail = await getAuthenticatedUserEmail(supabase);
+  if (!userEmail) {
+    return { ok: false, errors: { codigo: "No autenticado." } };
+  }
+
   const { data: existing } = await supabase
     .from("products")
     .select("order_index")
@@ -87,6 +106,7 @@ export async function updateProduct(
       price: parseFloat(price),
       category_id,
       order_index,
+      ...productAuditUpdate(userEmail),
     })
     .eq("id", id);
 
@@ -117,10 +137,13 @@ export async function reorderProducts(
   updates: { id: string; order_index: number }[]
 ): Promise<{ ok: boolean; error?: string }> {
   const supabase = await createClient();
+  const userEmail = await getAuthenticatedUserEmail(supabase);
+  if (!userEmail) return { ok: false, error: "No autenticado." };
+
   for (const { id, order_index } of updates) {
     const { error } = await supabase
       .from("products")
-      .update({ order_index })
+      .update({ order_index, ...productAuditUpdate(userEmail) })
       .eq("id", id)
       .eq("category_id", categoryId);
     if (error) return { ok: false, error: error.message };
@@ -151,10 +174,13 @@ export async function toggleProductFeatured(
     }
   }
 
+  const userEmail = await getAuthenticatedUserEmail(supabase);
+  if (!userEmail) return { ok: false, error: "No autenticado." };
+
   const newValue = !currentFeatured;
   const { error } = await supabase
     .from("products")
-    .update({ is_featured: newValue })
+    .update({ is_featured: newValue, ...productAuditUpdate(userEmail) })
     .eq("id", id);
 
   if (error) return { ok: false, error: error.message };

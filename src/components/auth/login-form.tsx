@@ -1,5 +1,6 @@
 "use client";
 
+import { ADMIN_SESSION_LABEL } from "@/lib/auth/admin-session";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2, Mail, Lock, AlertCircle } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -9,6 +10,7 @@ export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") ?? "/admin";
+  const sessionExpired = searchParams.get("reason") === "session_expired";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,6 +35,16 @@ export function LoginForm() {
             ? "Email o contraseña incorrectos"
             : authError.message
         );
+        setLoading(false);
+        return;
+      }
+
+      const sessionRes = await fetch("/api/auth/session-start", {
+        method: "POST",
+      });
+
+      if (!sessionRes.ok) {
+        setError("No se pudo iniciar la sesión. Intenta de nuevo.");
         setLoading(false);
         return;
       }
@@ -75,6 +87,13 @@ export function LoginForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {sessionExpired && !error && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+              Tu sesión expiró (límite de {ADMIN_SESSION_LABEL}). Inicia sesión
+              nuevamente.
+            </div>
+          )}
+
           {error && (
             <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
               <AlertCircle className="h-4 w-4 shrink-0" />
